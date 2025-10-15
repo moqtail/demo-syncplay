@@ -1,3 +1,3 @@
 [workspace]
-members = ["apps/publisher", "libs/moqtail-rs"]
+members = ["apps/publisher", "apps/relay", "libs/moqtail-rs"]
 resolver = "2"

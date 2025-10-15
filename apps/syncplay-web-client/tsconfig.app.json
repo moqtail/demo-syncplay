@@ -22,7 +22,14 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Path mapping for moqtail-ts */
+    "baseUrl": ".",
+    "paths": {
+      "@": ["../../libs/moqtail-ts/src"],
+      "@/*": ["../../libs/moqtail-ts/src/*"]
+    }
   },
   "include": ["src"]
 }

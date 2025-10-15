@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { FragmentRange, RequestState } from './types'
 import { requestFragmentRange, requestFragmentRangeWithFetch } from './api'
+import { requestFragmentRangeWithMOQ, disconnectMOQ } from './moq-api'
 import './MP4Requester.css'
 
 function App() {
@@ -17,7 +18,7 @@ function App() {
   })
   
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
-  const [useFetchProtocol, setUseFetchProtocol] = useState<boolean>(false)
+  const [protocol, setProtocol] = useState<'http' | 'fetch' | 'moq'>('http')
   const videoRef = useRef<HTMLVideoElement>(null)
 
   const handleInputChange = (field: keyof FragmentRange) => (
@@ -34,9 +35,20 @@ function App() {
     
     try {
       // Choose the appropriate API based on the protocol selection
-      const blob = useFetchProtocol 
-        ? await requestFragmentRangeWithFetch(range)
-        : await requestFragmentRange(range)
+      let blob: Blob;
+      
+      switch (protocol) {
+        case 'moq':
+          blob = await requestFragmentRangeWithMOQ(range);
+          break;
+        case 'fetch':
+          blob = await requestFragmentRangeWithFetch(range);
+          break;
+        case 'http':
+        default:
+          blob = await requestFragmentRange(range);
+          break;
+      }
       
       const url = URL.createObjectURL(blob)
       
@@ -61,6 +73,13 @@ function App() {
     }
   }
 
+  // Cleanup MOQ connection on component unmount
+  useEffect(() => {
+    return () => {
+      disconnectMOQ().catch(console.error);
+    };
+  }, []);
+
   return (
     <div className="mp4-requester-container">
       <div className="mp4-requester-content">
@@ -80,20 +99,50 @@ function App() {
         </div>
 
         <div className="mp4-requester-form-group">
-          <label className="mp4-requester-label">
-            <input
-              type="checkbox"
-              checked={useFetchProtocol}
-              onChange={(e) => setUseFetchProtocol(e.target.checked)}
-              style={{ marginRight: '8px' }}
-            />
-            Use MoQ Fetch Protocol (serialized Fetch/FetchObject)
-          </label>
-          <p style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
-            {useFetchProtocol 
-              ? 'Using POST /fetch with serialized MoQ Fetch request and FetchObject response'
-              : 'Using GET /range with query parameters and raw MP4 response'
-            }
+          <label className="mp4-requester-label">Protocol Selection:</label>
+          
+          <div style={{ marginTop: '10px' }}>
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <input
+                type="radio"
+                name="protocol"
+                value="http"
+                checked={protocol === 'http'}
+                onChange={(e) => setProtocol(e.target.value as 'http' | 'fetch' | 'moq')}
+                style={{ marginRight: '8px' }}
+              />
+              HTTP GET /range (Raw MP4 response)
+            </label>
+            
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <input
+                type="radio"
+                name="protocol"
+                value="fetch"
+                checked={protocol === 'fetch'}
+                onChange={(e) => setProtocol(e.target.value as 'http' | 'fetch' | 'moq')}
+                style={{ marginRight: '8px' }}
+              />
+              HTTP POST /fetch (Serialized MoQ Fetch/FetchObject)
+            </label>
+            
+            <label style={{ display: 'block', marginBottom: '5px' }}>
+              <input
+                type="radio"
+                name="protocol"
+                value="moq"
+                checked={protocol === 'moq'}
+                onChange={(e) => setProtocol(e.target.value as 'http' | 'fetch' | 'moq')}
+                style={{ marginRight: '8px' }}
+              />
+              MOQ WebTransport (Native MoQ Fetch Protocol)
+            </label>
+          </div>
+          
+          <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
+            {protocol === 'http' && 'Using GET /range with query parameters and raw MP4 response'}
+            {protocol === 'fetch' && 'Using POST /fetch with serialized MoQ Fetch request and FetchObject response'}
+            {protocol === 'moq' && 'Using WebTransport connection to MoQ relay with native fetch protocol'}
           </p>
         </div>
 

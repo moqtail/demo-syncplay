@@ -1,5 +1,6 @@
 mod moqpublisher;
 mod indexer;
+mod moq_publisher_client;
 use std::sync::Arc;
 use warp::Filter;
 
@@ -12,6 +13,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mp4_path = Arc::new(path);
     let idx = Arc::new(idx);
+
+    // Start MOQ publisher client in background
+    let mp4_path_clone = mp4_path.clone();
+    let idx_clone = idx.clone();
+    tokio::spawn(async move {
+        if let Err(e) = moq_publisher_client::run_moq_publisher(mp4_path_clone, idx_clone).await {
+            eprintln!("MOQ publisher client error: {e:?}");
+        }
+    });
 
     let mp4_path_filter = warp::any().map({
         let mp4_path = mp4_path.clone();

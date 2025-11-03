@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import type { FragmentRange, RequestState } from './types'
 import { requestFragmentRange, requestFragmentRangeWithFetch } from './api'
-import { requestFragmentRangeWithMOQ, disconnectMOQ } from './moq-api'
+import { requestFragmentRangeWithMOQ, disconnectMOQ, subscribeToDemo, startPublisherNamespace } from './moq-api'
 import './MP4Requester.css'
 
 function App() {
@@ -70,6 +70,25 @@ function App() {
         isLoading: false, 
         error: err instanceof Error ? err.message : 'An unknown error occurred'
       })
+    }
+  }
+
+  const handleSubscribeClick = async () => {
+    try {
+      await subscribeToDemo();
+    } catch (err) {
+      console.error('Subscribe failed', err);
+      alert('Subscribe failed: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  }
+
+  const handleStartPublisherClick = async () => {
+    try {
+      await startPublisherNamespace();
+      alert('Publish namespace announced');
+    } catch (err) {
+      console.error('Publish namespace failed', err);
+      alert('Publish namespace failed: ' + (err instanceof Error ? err.message : String(err)));
     }
   }
 
@@ -220,6 +239,14 @@ function App() {
           >
             {requestState.isLoading ? 'Requesting...' : 'Request Fragment Range'}
           </button>
+          <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+            <button type="button" onClick={handleSubscribeClick} className="mp4-requester-button">
+              Subscribe
+            </button>
+            <button type="button" onClick={handleStartPublisherClick} className="mp4-requester-button">
+              Start Publisher
+            </button>
+          </div>
         </form>
 
         {requestState.error && (

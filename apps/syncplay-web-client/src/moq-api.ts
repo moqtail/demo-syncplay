@@ -8,7 +8,10 @@ import {
   Location,
   FetchError,
   Tuple,
-  type ControlMessage
+  FilterType,
+  SubscribeError,
+  type ControlMessage,
+  MoqtObject
 } from '../../../libs/moqtail-ts/src/index';
 
 const MOQ_RELAY_URL = 'https://localhost:4433/transport'; 
@@ -64,50 +67,65 @@ export const requestFragmentRangeWithMOQ = async (range: FragmentRange): Promise
     const startLocation = new Location(BigInt(startGroupId), BigInt(startObjectId));
     const endLocation = new Location(BigInt(endGroupId), BigInt(endObjectId));
     
-    console.log('Sending MOQ fetch request:', {
+    console.log('Preparing MOQ fetch requests for:', {
       startLocation: `${startGroupId}:${startObjectId}`,
       endLocation: `${endGroupId}:${endObjectId}`,
       trackName: fullTrackName.toString()
     });
 
-    const fetchResult = await client.fetch({
-      priority: 1, 
-      groupOrder: GroupOrder.Original,
-      typeAndProps: {
-        type: FetchType.StandAlone,
-        props: {
-          fullTrackName,
-          startLocation,
-          endLocation
-        }
-      }
-    });
-
-    if (fetchResult instanceof FetchError) {
-      throw new Error(`MOQ fetch failed: ${fetchResult.errorCode} - ${fetchResult.reasonPhrase.phrase}`);
-    }
-
-    console.log('MOQ fetch started, reading stream...');
     const videoChunks: Uint8Array[] = [];
-    const reader = fetchResult.stream.getReader();
-    
-    try {
-      while (true) {
-        const { done, value: moqtObject } = await reader.read();
-        
-        if (done) {
-          console.log('MOQ fetch stream completed');
-          break;
-        }
 
-        if (moqtObject && moqtObject.payload) {
-          console.log(`Received MOQ object: group=${moqtObject.location.group}, object=${moqtObject.location.object}, size=${moqtObject.payload.length}`);
-          videoChunks.push(new Uint8Array(moqtObject.payload));
+    // Helper: perform a single fetch and append received object payloads to videoChunks
+    const doFetch = async (sLocation: Location, eLocation: Location) => {
+      console.log(`Sending MOQ fetch request: ${sLocation.group}:${sLocation.object} -> ${eLocation.group}:${eLocation.object}`);
+      const res = await client.fetch({
+        priority: 1,
+        groupOrder: GroupOrder.Original,
+        typeAndProps: {
+          type: FetchType.StandAlone,
+          props: {
+            fullTrackName,
+            startLocation: sLocation,
+            endLocation: eLocation,
+          }
         }
+      });
+
+      if (res instanceof FetchError) {
+        throw new Error(`MOQ fetch failed: ${res.errorCode} - ${res.reasonPhrase.phrase}`);
       }
-    } finally {
-      reader.releaseLock();
+
+      console.log('MOQ fetch started, reading stream...');
+      const reader = res.stream.getReader();
+      try {
+        while (true) {
+          const { done, value: moqtObject } = await reader.read();
+          if (done) {
+            console.log('MOQ fetch stream completed');
+            break;
+          }
+          if (moqtObject && moqtObject.payload) {
+            console.log(`Received MOQ object: track= ${moqtObject.fullTrackName.name.toString()} group=${moqtObject.location.group}, object=${moqtObject.location.object}, size=${moqtObject.payload.length}`);
+            videoChunks.push(new Uint8Array(moqtObject.payload));
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    };
+
+  // If the requested range does NOT include the init object (group 0 object 0),
+  // fetch the init segment first so the browser MP4 parser can initialize.
+  const shouldFetchInit = !(startGroupId === 0 && startObjectId === 0);
+
+    if (shouldFetchInit) {
+      const initStart = new Location(BigInt(0), BigInt(0));
+      const initEnd = new Location(BigInt(0), BigInt(0));
+      await doFetch(initStart, initEnd);
     }
+
+    // Now fetch the requested range
+    await doFetch(startLocation, endLocation);
 
     if (videoChunks.length === 0) {
       throw new Error('No data received from MOQ fetch');
@@ -140,6 +158,68 @@ export const requestFragmentRangeWithMOQ = async (range: FragmentRange): Promise
     throw error;
   }
 };
+
+export const startPublisherNamespace = async (): Promise<void> => {
+  const client = await getMOQClient();
+  try {
+    const namespace = Tuple.fromUtf8Path("moqtail");
+    console.log('Announcing publish namespace', namespace);
+    const res = await client.publishNamespace(namespace);
+    console.log('publishNamespace result:', res);
+    if (res && (res as any).constructor && (res as any).constructor.name === 'PublishNamespaceError') {
+      throw new Error('PublishNamespaceError');
+    }
+  } catch (e) {
+    console.error('Failed to publish namespace:', e);
+    throw e;
+  }
+}
+
+export const subscribeToDemo = async (): Promise<void> => {
+  const client = await getMOQClient();
+  try {
+    const namespace = Tuple.fromUtf8Path("moqtail");
+    const fullTrackName = FullTrackName.tryNew(namespace, "demo");
+    console.log('Subscribing to', fullTrackName.toString());
+
+    const res = await client.subscribe({
+      fullTrackName,
+      priority: 1,
+      groupOrder: GroupOrder.Original,
+      forward: true,
+      filterType: FilterType.LatestObject,
+    });
+
+    if (res instanceof SubscribeError) {
+      console.error('Subscribe refused:', res);
+      alert('Subscribe refused: ' + JSON.stringify(res));
+      return;
+    }
+
+    console.log('Subscribe successful, reading stream...');
+    const reader = res.stream.getReader();
+
+    (async () => {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            console.log('Subscription stream completed');
+            break;
+          }
+          console.log('Received subscribed object:', value);
+        }
+      } catch (err) {
+        console.error('Error reading subscription stream:', err);
+      } finally {
+        reader.releaseLock();
+      }
+    })();
+  } catch (e) {
+    console.error('Subscribe failed:', e);
+    throw e;
+  }
+}
 
 export const disconnectMOQ = async (): Promise<void> => {
   if (moqClient) {

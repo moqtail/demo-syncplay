@@ -233,7 +233,7 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
 
                     for (group_id, frags) in groups {
                         info!("Publishing group {} with {} fragments (total across tracks)", group_id, frags.len());
-
+                        tokio::time::sleep(std::time::Duration::from_nanos(10)).await;
                         // Partition the fragments for this group by track id so we publish one
                         // unidirectional stream per track (video/audio), which ensures both
                         // tracks' objects are sent (previously only one stream per group was used).
@@ -327,7 +327,6 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                                     info!("Sent object for group {} track {} object {} (size={})", group_id, track_id, object_id_for_frag, object.payload.as_ref().map(|p| p.len()).unwrap_or(0));
                                 }
                                 prev_object_id = Some(object.location.object);
-                                tokio::time::sleep(std::time::Duration::from_millis(1)).await;
                             }
 
                             if let Err(e) = stream_handler.flush().await {

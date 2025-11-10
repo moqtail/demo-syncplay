@@ -11,7 +11,6 @@ import {
   FilterType,
   SubscribeError,
   type ControlMessage,
-  MoqtObject
 } from '../../../libs/moqtail-ts/src/index';
 
 const MOQ_RELAY_URL = 'https://localhost:4433/transport'; 
@@ -46,134 +45,149 @@ async function getMOQClient(): Promise<MOQtailClient> {
   return moqClient;
 }
 
-export const requestFragmentRangeWithMOQ = async (range: FragmentRange): Promise<Blob> => {
+async function fetchRangeBytesWithMOQ(
+  fullTrackName: FullTrackName,
+  startLocation: Location,
+  endLocation: Location,
+): Promise<Uint8Array> {
+  const client = await getMOQClient();
+
+  console.log(
+    `Sending MOQ fetch request: ${startLocation.group}:${startLocation.object} -> ${endLocation.group}:${endLocation.object}`,
+  );
+
+  const res = await client.fetch({
+    priority: 1,
+    groupOrder: GroupOrder.Original,
+    typeAndProps: {
+      type: FetchType.StandAlone,
+      props: {
+        fullTrackName,
+        startLocation,
+        endLocation,
+      },
+    },
+  });
+
+  if (res instanceof FetchError) {
+    throw new Error(
+      `MOQ fetch failed: ${res.errorCode} - ${res.reasonPhrase.phrase}`,
+    );
+  }
+
+  console.log("MOQ fetch started, reading stream...");
+  const reader = res.stream.getReader();
+  const chunks: Uint8Array[] = [];
+
+  try {
+    while (true) {
+      const { done, value: moqtObject } = await reader.read();
+      if (done) {
+        console.log("MOQ fetch stream completed");
+        break;
+      }
+      if (moqtObject && moqtObject.payload) {
+        console.log(
+          `Received MOQ object: track=${moqtObject.fullTrackName.name.toString()} group=${moqtObject.location.group}, object=${moqtObject.location.object}, size=${moqtObject.payload.length}`,
+        );
+        chunks.push(new Uint8Array(moqtObject.payload));
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  if (chunks.length === 0) {
+    throw new Error("No data received from MOQ fetch");
+  }
+
+  const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
+  const combined = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const c of chunks) {
+    combined.set(c, offset);
+    offset += c.length;
+  }
+
+  console.log(
+    `MOQ fetch completed: ${chunks.length} objects, ${totalLength} bytes total`,
+  );
+
+  return combined;
+}
+
+export const requestInitWithMOQ = async (): Promise<Uint8Array> => {
+  try {
+    const namespace = Tuple.fromUtf8Path("moqtail");
+    const fullTrackName = FullTrackName.tryNew(namespace, "demo");
+
+    const initStart = new Location(0n, 0n);
+    const initEnd = new Location(0n, 0n);
+
+    console.log("Requesting MOQ init segment (0:0 -> 0:0)");
+    return await fetchRangeBytesWithMOQ(fullTrackName, initStart, initEnd);
+  } catch (error) {
+    console.error("MOQ init fetch error:", error);
+    if (
+      error instanceof Error &&
+      (error.message.includes("connection") ||
+        error.message.includes("transport") ||
+        error.message.includes("WebTransport"))
+    ) {
+      moqClient = null;
+    }
+    throw error;
+  }
+};
+
+export const requestFragmentRangeBodyWithMOQ = async (
+  range: FragmentRange,
+): Promise<Uint8Array> => {
   const { startGroupId, startObjectId, endGroupId, endObjectId } = range;
 
   if (
     startGroupId > endGroupId ||
     (startGroupId === endGroupId && startObjectId > endObjectId)
   ) {
-    throw new Error('Start range cannot be greater than end range');
+    throw new Error("Start range cannot be greater than end range");
   }
 
-  console.log('Requesting MOQ fetch for range:', range);
+  console.log("Requesting MOQ fragment body for range:", range);
 
   try {
-    const client = await getMOQClient();
-
     const namespace = Tuple.fromUtf8Path("moqtail");
     const fullTrackName = FullTrackName.tryNew(namespace, "demo");
-    
-    const startLocation = new Location(BigInt(startGroupId), BigInt(startObjectId));
+
+    const startLocation = new Location(
+      BigInt(startGroupId),
+      BigInt(startObjectId),
+    );
     const endLocation = new Location(BigInt(endGroupId), BigInt(endObjectId));
-    
-    console.log('Preparing MOQ fetch requests for:', {
+
+    console.log("Preparing MOQ body fetch:", {
       startLocation: `${startGroupId}:${startObjectId}`,
       endLocation: `${endGroupId}:${endObjectId}`,
-      trackName: fullTrackName.toString()
+      trackName: fullTrackName.toString(),
     });
 
-    const videoChunks: Uint8Array[] = [];
-
-    // Helper: perform a single fetch and append received object payloads to videoChunks
-    const doFetch = async (sLocation: Location, eLocation: Location) => {
-      console.log(`Sending MOQ fetch request: ${sLocation.group}:${sLocation.object} -> ${eLocation.group}:${eLocation.object}`);
-      const res = await client.fetch({
-        priority: 1,
-        groupOrder: GroupOrder.Original,
-        typeAndProps: {
-          type: FetchType.StandAlone,
-          props: {
-            fullTrackName,
-            startLocation: sLocation,
-            endLocation: eLocation,
-          }
-        }
-      });
-
-      if (res instanceof FetchError) {
-        throw new Error(`MOQ fetch failed: ${res.errorCode} - ${res.reasonPhrase.phrase}`);
-      }
-
-      console.log('MOQ fetch started, reading stream...');
-      const reader = res.stream.getReader();
-      try {
-        while (true) {
-          const { done, value: moqtObject } = await reader.read();
-          if (done) {
-            console.log('MOQ fetch stream completed');
-            break;
-          }
-          if (moqtObject && moqtObject.payload) {
-            console.log(`Received MOQ object: track= ${moqtObject.fullTrackName.name.toString()} group=${moqtObject.location.group}, object=${moqtObject.location.object}, size=${moqtObject.payload.length}`);
-            videoChunks.push(new Uint8Array(moqtObject.payload));
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
-    };
-
-  // If the requested range does NOT include the init object (group 0 object 0),
-  // fetch the init segment first so the browser MP4 parser can initialize.
-  const shouldFetchInit = !(startGroupId === 0 && startObjectId === 0);
-
-    if (shouldFetchInit) {
-      const initStart = new Location(BigInt(0), BigInt(0));
-      const initEnd = new Location(BigInt(0), BigInt(0));
-      await doFetch(initStart, initEnd);
-    }
-
-    // Now fetch the requested range
-    await doFetch(startLocation, endLocation);
-
-    if (videoChunks.length === 0) {
-      throw new Error('No data received from MOQ fetch');
-    }
-
-    const totalLength = videoChunks.reduce((sum, chunk) => sum + chunk.length, 0);
-    const combinedData = new Uint8Array(totalLength);
-    let combinedOffset = 0;
-    
-    for (const chunk of videoChunks) {
-      combinedData.set(chunk, combinedOffset);
-      combinedOffset += chunk.length;
-    }
-
-    console.log(`MOQ fetch completed: ${videoChunks.length} objects, ${totalLength} bytes total`);
-    
-    return new Blob([combinedData], { type: 'video/mp4' });
-
+    return await fetchRangeBytesWithMOQ(
+      fullTrackName,
+      startLocation,
+      endLocation,
+    );
   } catch (error) {
-    console.error('MOQ fetch error:', error);
-    
-    if (error instanceof Error && (
-      error.message.includes('connection') || 
-      error.message.includes('transport') ||
-      error.message.includes('WebTransport')
-    )) {
+    console.error("MOQ fragment body fetch error:", error);
+    if (
+      error instanceof Error &&
+      (error.message.includes("connection") ||
+        error.message.includes("transport") ||
+        error.message.includes("WebTransport"))
+    ) {
       moqClient = null;
     }
-    
     throw error;
   }
 };
-
-export const startPublisherNamespace = async (): Promise<void> => {
-  const client = await getMOQClient();
-  try {
-    const namespace = Tuple.fromUtf8Path("moqtail");
-    console.log('Announcing publish namespace', namespace);
-    const res = await client.publishNamespace(namespace);
-    console.log('publishNamespace result:', res);
-    if (res && (res as any).constructor && (res as any).constructor.name === 'PublishNamespaceError') {
-      throw new Error('PublishNamespaceError');
-    }
-  } catch (e) {
-    console.error('Failed to publish namespace:', e);
-    throw e;
-  }
-}
 
 export const subscribeToDemo = async (): Promise<void> => {
   const client = await getMOQClient();

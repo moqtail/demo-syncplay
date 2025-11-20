@@ -4,7 +4,8 @@ import {
   disconnectMOQ, 
   subscribeToDemo, 
   requestInitWithMOQ, 
-  requestFragmentRangeBodyWithMOQ 
+  requestFragmentRangeBodyWithMOQ ,
+  fetchRangeStreamingWithMOQ,
 } from './moq-api'
 import './MP4Requester.css'
 
@@ -290,23 +291,25 @@ function App() {
                   const targetGroup = nextGroupRef.current
 
                   if (!isRangeBuffered(targetGroup, targetGroup)) {
-                    console.log(
-                      `Fetching group ${targetGroup} via MOQ (t=${currentTimeSeconds.toFixed(2)}s, g_cur=${currentGroup}, g_max=${maxGroupToFetch})`
-                    )
+  console.log(
+    `Fetching group ${targetGroup} via MOQ (t=${currentTimeSeconds.toFixed(2)}s, g_cur=${currentGroup}, g_max=${maxGroupToFetch})`
+  );
 
-                    const fragmentData = await requestFragmentRangeBodyWithMOQ({
-                      startGroupId: targetGroup,
-                      startObjectId: 0,
-                      endGroupId: targetGroup,
-                      endObjectId: 0,
-                    })
+  await fetchRangeStreamingWithMOQ(
+    targetGroup,
+    0,
+    targetGroup,
+    0,
+    (payload) => {
+      enqueueAppend(payload);
+    },
+  );
 
-                    enqueueAppend(fragmentData)
-                    markGroupsBuffered(targetGroup, targetGroup)
-                    nextGroupRef.current = targetGroup + 1
-                  } else {
-                    nextGroupRef.current++
-                  }
+  markGroupsBuffered(targetGroup, targetGroup);
+  nextGroupRef.current = targetGroup + 1;
+} else {
+  nextGroupRef.current++;
+}
                 } else {
                   // Fetch is filled, just wait
                 }

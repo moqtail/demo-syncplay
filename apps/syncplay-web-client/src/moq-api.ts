@@ -1,8 +1,8 @@
 import type { FragmentRange } from './types';
 
-import { 
+import {
   MOQtailClient,
-  FetchType, 
+  FetchType,
   GroupOrder,
   FullTrackName,
   Location,
@@ -13,7 +13,7 @@ import {
   type ControlMessage,
 } from '../../../libs/moqtail-ts/src/index';
 
-const MOQ_RELAY_URL = 'https://localhost:4433/transport'; 
+const MOQ_RELAY_URL = 'https://localhost:4433/transport';
 const SUPPORTED_VERSIONS = [0xFF00000E]; //constants -> draft 14
 
 let moqClient: MOQtailClient | null = null;
@@ -21,7 +21,7 @@ let moqClient: MOQtailClient | null = null;
 async function getMOQClient(): Promise<MOQtailClient> {
   if (!moqClient) {
     console.log('Connecting to MOQ relay at', MOQ_RELAY_URL);
-    
+
     try {
       moqClient = await MOQtailClient.new({
         url: MOQ_RELAY_URL,
@@ -34,15 +34,75 @@ async function getMOQClient(): Promise<MOQtailClient> {
           onSessionTerminated: (reason?: unknown) => console.warn('MOQ session terminated:', reason)
         }
       });
-      
+
       console.log('Connected to MOQ relay successfully');
     } catch (error) {
       console.error('Failed to connect to MOQ relay:', error);
       throw new Error(`MOQ connection failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
-  
+
   return moqClient;
+}
+
+export async function fetchRangeStreamingWithMOQ(
+  startGroupId: number,
+  startObjectId: number,
+  endGroupId: number,
+  endObjectId: number,
+  onChunk: (payload: Uint8Array, loc: { group: number; object: number }) => void,
+): Promise<void> {
+  const client = await getMOQClient();
+
+  const namespace = Tuple.fromUtf8Path("moqtail");
+  const fullTrackName = FullTrackName.tryNew(namespace, "demo");
+  const startLocation = new Location(
+    BigInt(startGroupId),
+    BigInt(startObjectId),
+  );
+  const endLocation = new Location(
+    BigInt(endGroupId),
+    BigInt(endObjectId),
+  );
+
+  const res = await client.fetch({
+    priority: 1,
+    groupOrder: GroupOrder.Original,
+    typeAndProps: {
+      type: FetchType.StandAlone,
+      props: {
+        fullTrackName: fullTrackName,
+        startLocation,
+        endLocation,
+      },
+    },
+  });
+
+  if (res instanceof FetchError) {
+    throw new Error(
+      `MOQ fetch failed: ${res.errorCode} - ${res.reasonPhrase.phrase}`,
+    );
+  }
+
+  const reader = res.stream.getReader();
+
+  try {
+    while (true) {
+      const { done, value: moqtObject } = await reader.read();
+      if (done) break;
+      if (moqtObject && moqtObject.payload) {
+        onChunk(
+          new Uint8Array(moqtObject.payload),
+          {
+            group: Number(moqtObject.location.group),
+            object: Number(moqtObject.location.object),
+          }
+        );
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
 }
 
 async function fetchRangeBytesWithMOQ(

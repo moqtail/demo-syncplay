@@ -1,39 +1,28 @@
-export interface FragmentRange {
-  startGroupId: number;
-  startObjectId: number;
-  endGroupId: number;
-  endObjectId: number;
-}
-
-export interface RequestState {
-  isLoading: boolean;
-  error: string | null;
-}
-
-// ============ SYNC PLAYBACK TYPES ============
-
 export type UserRole = 'leader' | 'follower';
 
-export interface SyncConfig {
-  deltaThresholdSeconds: number;      // Sync tolerance (e.g., 0.5s)
-  leaderBroadcastIntervalMs: number;  // How often leader sends updates (e.g., 50ms)
-  wsUrl: string;                      // WebSocket server URL
-  wsReconnectDelayMs: number;         // Reconnection delay
+export interface User {
+  id: string;
+  name: string;
+  role: UserRole;
+  roomId: string;
+  mediaTrackName: string;
+  ws: any;
 }
 
-export interface PlaybackPosition {
+export interface PlaybackState {
   timestamp: number;
   groupId: number;
   objectId: number;
   isPlaying: boolean;
+  lastUpdateTime: number;
 }
 
-// WebSocket Messages (matching server types)
-export interface JoinRoomMessage {
-  type: 'join-as-leader' | 'join-as-follower';
-  roomId: string;
-  userName: string;
-  mediaTrackName: string;
+export interface Room {
+  id: string;
+  leaderId: string | null;
+  users: Map<string, User>;
+  mediaName: string;
+  currentPlaybackState: PlaybackState | null;
 }
 
 export interface VideoItem {
@@ -54,6 +43,13 @@ export interface RoomInfo {
   userCount: number;
   videoName: string;
   leaderName: string | null;
+}
+
+export interface JoinRoomMessage {
+  type: 'join-as-leader' | 'join-as-follower';
+  roomId: string;
+  userName: string;
+  mediaTrackName: string;
 }
 
 export interface GetRoomsMessage {
@@ -105,7 +101,7 @@ export interface RoomStateMessage {
   }>;
   totalUsers: number;
   mediaName: string;
-  currentPlaybackState: PlaybackPosition | null;
+  currentPlaybackState: PlaybackState | null;
 }
 
 export interface UserJoinedMessage {
@@ -139,3 +135,10 @@ export type ServerMessage =
   | ErrorMessage
   | RoomsListMessage
   | ConfigMessage;
+
+export type ClientMessage =
+  | JoinRoomMessage
+  | SyncUpdateMessage
+  | PlaybackControlMessage
+  | GetRoomsMessage
+  | GetConfigMessage;

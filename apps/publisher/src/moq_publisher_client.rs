@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use moqtail::model::data::constant::ObjectStatus;
 use moqtail::model::{
     common::tuple::Tuple,
     data::subgroup_object::SubgroupObject,
@@ -179,8 +180,8 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                                                 0,
                                                 0,
                                                 publisher_priority,
-                                                false,
-                                                false,
+                                                true, // if false then extension headers must be set to None
+                                                true,
                                             );
 
                                             let header_info = HeaderInfo::Subgroup { header: sub_header };
@@ -188,8 +189,8 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                                                 Ok(mut stream_handler) => {
                                                     let subgroup_obj = SubgroupObject {
                                                         object_id: 0,
-                                                        extension_headers: None,
-                                                        object_status: None,
+                                                        extension_headers: Some(vec![]),
+                                                        object_status: Some(ObjectStatus::Normal),
                                                         payload: Some(Bytes::from(init_buf.clone())),
                                                     };
 
@@ -242,8 +243,7 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                             per_track.entry(frag.track_id).or_default().push(frag.clone());
                         }
 
-                        let track_count = per_track.len();
-                        for (track_idx, (track_id, track_frags)) in per_track.into_iter().enumerate() {
+                        for (_, (track_id, track_frags)) in per_track.into_iter().enumerate() {
                             info!("Publishing group {} track {} with {} fragments", group_id, track_id, track_frags.len());
 
                             // open a unidirectional stream for this track
@@ -261,16 +261,15 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                             let send_stream = open_res.unwrap();
                             let send_stream = Arc::new(tokio::sync::Mutex::new(send_stream));
 
-                            // pick subgroup id as first object's id; for our publisher we start objects at 1
-                            let first_object_id: u64 = 1;
-                            // mark contains_end_of_group = true only for the last track stream
-                            let contains_end_of_group = track_idx + 1 == track_count;
-                            let sub_header = SubgroupHeader::new_first_object_id(
+                            let subgroup_id : u64 = 1;
+
+                            let sub_header = SubgroupHeader::new_with_explicit_id(
                                 track_alias,
                                 group_id,
+                                subgroup_id,
                                 publisher_priority,
-                                false,
-                                contains_end_of_group,
+                                true,
+                                true,
                             );
 
                             let header_info = HeaderInfo::Subgroup { header: sub_header };
@@ -300,16 +299,16 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
 
                                 let subgroup_obj = SubgroupObject {
                                     object_id: object_id_for_frag,
-                                    extension_headers: None,
-                                    object_status: None,
+                                    extension_headers: Some(vec![]),
+                                    object_status: Some(ObjectStatus::Normal),
                                     payload: Some(Bytes::from(buf)),
                                 };
 
                                 let object = match Object::try_from_subgroup(
-                                    subgroup_obj.clone(),
+                                    subgroup_obj,
                                     track_alias,
                                     group_id,
-                                    Some(first_object_id),
+                                    Some(subgroup_id),
                                     publisher_priority,
                                 ) {
                                     Ok(o) => o,
@@ -326,7 +325,7 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                                 } else {
                                     info!("Sent object for group {} track {} object {} (size={})", group_id, track_id, object_id_for_frag, object.payload.as_ref().map(|p| p.len()).unwrap_or(0));
                                 }
-                                prev_object_id = Some(object.location.object);
+                                prev_object_id = Some(object_id_for_frag);
                             }
 
                             if let Err(e) = stream_handler.flush().await {

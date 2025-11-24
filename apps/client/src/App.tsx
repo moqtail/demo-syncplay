@@ -89,6 +89,9 @@ function App() {
   
   // For followers: track leader's position
   const leaderPositionRef = useRef<{ time: number; group: number } | null>(null)
+  
+  // For followers: track independent playback mode
+  const [isIndependentMode, setIsIndependentMode] = useState(false)
 
   // ============ UTILITY FUNCTIONS ============
   
@@ -349,6 +352,7 @@ function App() {
     timeToGroup,
     timeToObject,
     onSyncRequired: handleSyncRequired,
+    isIndependentMode,
   })
 
   // ============ SYNC & ROOM MANAGEMENT ============
@@ -562,6 +566,7 @@ function App() {
     setHasJoinedRoom(false)
     setUserRole(null)
     setRoomState(null)
+    setIsIndependentMode(false)
     
     // Disconnect and reconnect to properly leave the room on the server
     // disconnect() will close the WebSocket, which triggers the server's disconnect handler
@@ -584,6 +589,26 @@ function App() {
     setCurrentPage('lobby')
     setCurrentRoomId(null)
   }, [videoUrl, syncService, handleRequestConfig, handleRequestRooms])
+
+  const handleToggleIndependentMode = useCallback(() => {
+    if (userRole !== 'follower') return
+    
+    setIsIndependentMode(prev => {
+      const newMode = !prev
+      console.log(`[App] Follower ${newMode ? 'entering' : 'exiting'} independent mode`)
+      
+      if (!newMode) {
+        // When re-syncing, immediately sync to leader's current position
+        const video = videoRef.current
+        if (video && leaderPositionRef.current) {
+          console.log(`[App] Re-syncing to leader position: ${leaderPositionRef.current.time.toFixed(2)}s`)
+          video.currentTime = leaderPositionRef.current.time
+        }
+      }
+      
+      return newMode
+    })
+  }, [userRole])
 
   const handleJoinRoomClick = async () => {
     try {
@@ -922,6 +947,32 @@ function App() {
           </>
         ) : (
           <>
+            {/* Room Page Controls */}
+            <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={handleLeaveRoom}
+                className="mp4-requester-button"
+                style={{ backgroundColor: '#dc3545' }}
+              >
+                ← Leave Room
+              </button>
+              
+              {userRole === 'follower' && (
+                <button
+                  type="button"
+                  onClick={handleToggleIndependentMode}
+                  className="mp4-requester-button"
+                  style={{ 
+                    backgroundColor: isIndependentMode ? '#28a745' : '#6c757d',
+                    flex: '1',
+                    minWidth: '200px'
+                  }}
+                >
+                  {isIndependentMode ? 'Re-Sync with group' : 'Independent Playback'}
+                </button>
+              )}
+            </div>
 
             {/* Sync Status Display */}
             {roomState && (
@@ -982,7 +1033,7 @@ function App() {
           <div className="mp4-requester-video-container">
             <video
               ref={videoRef}
-              controls={userRole === 'leader'} // Only leader has controls
+              controls={userRole === 'leader' || (userRole === 'follower' && isIndependentMode)}
               className="mp4-requester-video"
               src={videoUrl}
             />

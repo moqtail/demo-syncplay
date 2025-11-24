@@ -15,6 +15,7 @@ interface UseSyncPlaybackProps {
   timeToGroup: (time: number) => number;
   timeToObject: (time: number) => number;
   onSyncRequired?: (targetTime: number, targetGroup: number) => void;
+  isIndependentMode?: boolean;
 }
 
 export function useSyncPlayback({
@@ -25,6 +26,7 @@ export function useSyncPlayback({
   timeToGroup,
   timeToObject,
   onSyncRequired,
+  isIndependentMode: isDecoupledPlayback = false,
 }: UseSyncPlaybackProps) {
   const lastSyncTimeRef = useRef<number>(0);
   const syncDeltaRef = useRef<number>(0);
@@ -33,7 +35,7 @@ export function useSyncPlayback({
   const handleSyncUpdate = useCallback(
     (message: SyncUpdateMessage) => {
       const video = videoRef.current;
-      if (!video) return;
+      if (!video || isDecoupledPlayback) return;
 
       const leaderTime = message.timestamp;
       const currentTime = video.currentTime;
@@ -64,13 +66,13 @@ export function useSyncPlayback({
         video.pause();
       }
     },
-    [videoRef, syncConfig, onSyncRequired]
+    [videoRef, syncConfig, onSyncRequired, isDecoupledPlayback]
   );
 
   const handlePlaybackControl = useCallback(
     (message: PlaybackControlMessage) => {
       const video = videoRef.current;
-      if (!video) return;
+      if (!video || isDecoupledPlayback) return;
 
       console.log(`[SyncPlayback] Follower: Playback control - ${message.action}`);
 
@@ -101,7 +103,7 @@ export function useSyncPlayback({
           break;
       }
     },
-    [videoRef, onSyncRequired]
+    [videoRef, onSyncRequired, isDecoupledPlayback]
   );
 
   useEffect(() => {

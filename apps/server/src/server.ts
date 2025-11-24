@@ -14,8 +14,8 @@ import type {
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 
 const serverConfig: ServerConfig = {
-  maxRoomCount: parseInt(process.env.MAX_ROOM_COUNT || '2'),
-  maxUsersPerRoom: parseInt(process.env.MAX_USERS_PER_ROOM || '2'),
+  maxRoomCount: parseInt(process.env.MAX_ROOM_COUNT || '3'),
+  maxUsersPerRoom: parseInt(process.env.MAX_USERS_PER_ROOM || '3'),
   videoCatalog: [
     { id: 'video1', name: 'BBB', trackName: 'moqtail/bbb' },
     { id: 'video2', name: 'AVGEN', trackName: 'moqtail/avgen' },

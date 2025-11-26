@@ -24,6 +24,9 @@ interface AppSettings {
   maxBufferSeconds: number      // Total buffer size in seconds
   fetchThrottleMs: number       // Delay between fetch requests
   autoPlayDelayMs: number       // Delay before auto-playing video for leader (in milliseconds)
+  defaultMaxAllowedDriftMs: number // Maximum allowed drift for sync (in milliseconds)
+  syncMinAllowedDriftMs: number // Minimum allowed drift for sync (in milliseconds)
+  syncMaxAllowedDriftMs: number // Upper limit for drift adjustment (in milliseconds)
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -34,6 +37,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   maxBufferSeconds: 20,  // total budget (>= back + ahead recommended)
   fetchThrottleMs: 50,
   autoPlayDelayMs: 2000, // seconds delay before auto-play
+  defaultMaxAllowedDriftMs: 500, // 500ms default drift threshold
+  syncMinAllowedDriftMs: 200, // 200ms minimum
+  syncMaxAllowedDriftMs: 3000, // 3000ms maximum
 }
 
 const DEFAULT_SYNC_CONFIG: SyncConfig = {
@@ -45,7 +51,10 @@ const DEFAULT_SYNC_CONFIG: SyncConfig = {
 
 function App() {
   const [settings] = useState<AppSettings>(DEFAULT_SETTINGS)
-  const [syncConfig] = useState<SyncConfig>(DEFAULT_SYNC_CONFIG)
+  const [syncConfig, setSyncConfig] = useState<SyncConfig>({
+    ...DEFAULT_SYNC_CONFIG,
+    deltaThresholdSeconds: DEFAULT_SETTINGS.defaultMaxAllowedDriftMs / 1000,
+  })
   
   const [requestState, setRequestState] = useState<RequestState>({
     isLoading: false,
@@ -368,9 +377,9 @@ function App() {
 
   // ============ SYNC & ROOM MANAGEMENT ============
 
-  // Initialize sync service
+  // Initialize sync service (only once, not dependent on syncConfig changes)
   useEffect(() => {
-    const service = new SyncPlayService(syncConfig)
+    const service = new SyncPlayService(DEFAULT_SYNC_CONFIG)
     setSyncService(service)
 
     service.connect().then(() => {
@@ -453,7 +462,7 @@ function App() {
     return () => {
       service.disconnect()
     }
-  }, [syncConfig])
+  }, []) // Empty dependency array - only create service once
 
   // Handle relay subscription
   const handleSubscribeClick = async () => {
@@ -1018,6 +1027,15 @@ function App() {
                     totalUsers={roomState.totalUsers}
                     syncDelta={userRole === 'follower' ? syncDelta : undefined}
                     isConnected={isConnected}
+                    deltaThreshold={userRole === 'follower' ? syncConfig.deltaThresholdSeconds : undefined}
+                    onDeltaThresholdChange={(newMs) => {
+                      setSyncConfig(prev => ({
+                        ...prev,
+                        deltaThresholdSeconds: newMs / 1000,
+                      }));
+                    }}
+                    minDriftMs={settings.syncMinAllowedDriftMs}
+                    maxDriftMs={settings.syncMaxAllowedDriftMs}
                   />
                 </div>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>

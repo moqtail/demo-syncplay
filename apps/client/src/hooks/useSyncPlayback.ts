@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { SyncPlayService } from '../services/SyncPlayService';
 import type {
   UserRole,
@@ -30,7 +30,15 @@ export function useSyncPlayback({
 }: UseSyncPlaybackProps) {
   const lastSyncTimeRef = useRef<number>(0);
   const syncDeltaRef = useRef<number>(0);
+  const [syncDelta, setSyncDelta] = useState<number>(0);
   const broadcastIntervalRef = useRef<number | null>(null);
+  const deltaThresholdRef = useRef<number>(syncConfig.deltaThresholdSeconds);
+
+  // Update the threshold ref whenever syncConfig changes
+  useEffect(() => {
+    console.log(`[SyncPlayback] Updating deltaThreshold ref to ${syncConfig.deltaThresholdSeconds}s (${syncConfig.deltaThresholdSeconds * 1000}ms)`);
+    deltaThresholdRef.current = syncConfig.deltaThresholdSeconds;
+  }, [syncConfig.deltaThresholdSeconds]);
 
   const handleSyncUpdate = useCallback(
     (message: SyncUpdateMessage) => {
@@ -42,15 +50,18 @@ export function useSyncPlayback({
       const delta = Math.abs(currentTime - leaderTime);
 
       syncDeltaRef.current = delta;
+      setSyncDelta(delta);
       lastSyncTimeRef.current = Date.now();
+
+      console.log(`[SyncPlayback] Follower sync update: delta=${delta.toFixed(3)}s, threshold=${deltaThresholdRef.current.toFixed(3)}s, needsSync=${delta > deltaThresholdRef.current}`);
 
       if (onSyncRequired) {
         onSyncRequired(leaderTime, message.groupId);
       }
 
-      if (delta > syncConfig.deltaThresholdSeconds) {
+      if (delta > deltaThresholdRef.current) {
         console.log(
-          `[SyncPlayback] Follower: OUT OF SYNC (Δ ${delta.toFixed(2)}s) - seeking to ${leaderTime.toFixed(2)}s`
+          `[SyncPlayback] Follower: OUT OF SYNC (Δ ${delta.toFixed(2)}s, threshold ${deltaThresholdRef.current.toFixed(2)}s) - seeking to ${leaderTime.toFixed(2)}s`
         );
         
         video.currentTime = leaderTime;
@@ -66,7 +77,7 @@ export function useSyncPlayback({
         video.pause();
       }
     },
-    [videoRef, syncConfig, onSyncRequired, isDecoupledPlayback]
+    [videoRef, onSyncRequired, isDecoupledPlayback]
   );
 
   const handlePlaybackControl = useCallback(
@@ -210,6 +221,6 @@ export function useSyncPlayback({
   }, [syncService, role, handleSyncUpdate, handlePlaybackControl]);
 
   return {
-    syncDelta: syncDeltaRef.current,
+    syncDelta,
   };
 }

@@ -1,5 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { RoomManager } from './RoomManager';
+import appSettings from './appsettings.json';
 import type {
   ClientMessage,
   JoinRoomMessage,
@@ -13,12 +14,10 @@ import type {
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 
-const serverConfig: ServerConfig = {
-  maxRoomCount: parseInt(process.env.MAX_ROOM_COUNT || '4'),
-  maxUsersPerRoom: parseInt(process.env.MAX_USERS_PER_ROOM || '3'),
-  videoCatalog: [
-    { id: 'video1', name: 'BBB', trackName: 'moqtail/bbb' },
-  ],
+export const serverConfig: ServerConfig = {
+  maxRoomCount: appSettings.serverConfig.maxRoomCount,
+  maxUsersPerRoom: appSettings.serverConfig.maxUsersPerRoom,
+  videoCatalog: appSettings.serverConfig.videoCatalog,
 };
 
 const roomManager = new RoomManager(serverConfig);

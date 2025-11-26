@@ -12,6 +12,7 @@ import { useSyncPlayback } from './hooks/useSyncPlayback'
 import { RoomControls } from './components/RoomControls'
 import { SyncStatusIndicator } from './components/SyncStatusIndicator'
 import './MP4Requester.css'
+import appSettings from '../src/assets/appsettings.json';
 
 const MSE_MIME = 'video/mp4; codecs="avc1.64001F, mp4a.40.2"'
 
@@ -29,31 +30,30 @@ interface AppSettings {
   syncMaxAllowedDriftMs: number // Upper limit for drift adjustment (in milliseconds)
 }
 
-const DEFAULT_SETTINGS: AppSettings = {
-  groupsPerSecond: 1,
-  objectsPerGroup: 48,   // 24 video + 24 audio
-  fetchAheadSeconds: 5, // ahead buffer
-  backBufferSeconds: 5,  // keep 5s behind playhead
-  maxBufferSeconds: 20,  // total budget (>= back + ahead recommended)
-  fetchThrottleMs: 50,
-  autoPlayDelayMs: 2000, // seconds delay before auto-play
-  defaultMaxAllowedDriftMs: 500, // 500ms default drift threshold
-  syncMinAllowedDriftMs: 200, // 200ms minimum
-  syncMaxAllowedDriftMs: 3000, // 3000ms maximum
-}
-
 const DEFAULT_SYNC_CONFIG: SyncConfig = {
-  deltaThresholdSeconds: 0.5,
-  leaderBroadcastIntervalMs: 100,
-  wsUrl: 'ws://localhost:8080',
-  wsReconnectDelayMs: 3000,
-}
+  deltaThresholdSeconds: appSettings.deltaThresholdSeconds,
+  leaderBroadcastIntervalMs: appSettings.leaderBroadcastIntervalMs,
+  wsUrl: appSettings.wsUrl,
+  wsReconnectDelayMs: appSettings.wsReconnectDelayMs,
+};
 
 function App() {
-  const [settings] = useState<AppSettings>(DEFAULT_SETTINGS)
+  const [settings] = useState<AppSettings>({
+    groupsPerSecond: appSettings.groupsPerSecond,
+    objectsPerGroup: appSettings.objectsPerGroup,
+    fetchAheadSeconds: appSettings.fetchAheadSeconds,
+    backBufferSeconds: appSettings.backBufferSeconds,
+    maxBufferSeconds: appSettings.maxBufferSeconds,
+    fetchThrottleMs: appSettings.fetchThrottleMs,
+    autoPlayDelayMs: appSettings.autoPlayDelayMs,
+    defaultMaxAllowedDriftMs: appSettings.defaultMaxAllowedDriftMs,
+    syncMinAllowedDriftMs: appSettings.syncMinAllowedDriftMs,
+    syncMaxAllowedDriftMs: appSettings.syncMaxAllowedDriftMs,
+  })
+
   const [syncConfig, setSyncConfig] = useState<SyncConfig>({
     ...DEFAULT_SYNC_CONFIG,
-    deltaThresholdSeconds: DEFAULT_SETTINGS.defaultMaxAllowedDriftMs / 1000,
+    deltaThresholdSeconds: appSettings.defaultMaxAllowedDriftMs / 1000,
   })
   
   const [requestState, setRequestState] = useState<RequestState>({

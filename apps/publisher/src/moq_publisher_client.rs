@@ -18,9 +18,12 @@ use moqtail::model::data::subgroup_header::SubgroupHeader;
 use tracing::{info, error};
 use wtransport::{ClientConfig, Endpoint};
 use crate::indexer;
+use dotenv::dotenv;
+use std::env;
 
 pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index>) -> Result<(), anyhow::Error> {
-    let endpoint = "https://localhost:4433";
+    dotenv().ok(); // Load the .env file
+    let endpoint = env::var("RELAY_URL").expect("RELAY_URL must be set in .env");
     let validate_cert = true;
     let c = ClientConfig::builder().with_bind_default();
     let config = if validate_cert {

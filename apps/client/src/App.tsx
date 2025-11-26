@@ -982,7 +982,7 @@ function App() {
                 disabled={requestState.isLoading || relaySubscribed}
                 className="mp4-requester-button"
                 style={{
-                  backgroundColor: relaySubscribed ? '#28a745' : '#007bff',
+                  backgroundColor: relaySubscribed ? '#28a745' : '#577B9F',
                   cursor: relaySubscribed ? 'default' : 'pointer',
                   opacity: relaySubscribed ? 0.7 : 1
                 }}
@@ -1040,7 +1040,20 @@ function App() {
                     maxDriftMs={settings.syncMaxAllowedDriftMs}
                   />
                 </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {userRole === 'follower' && (
+                    <button
+                      type="button"
+                      onClick={handleToggleIndependentMode}
+                      className="mp4-requester-button"
+                      style={{ 
+                        backgroundColor: '#577B9F',
+                        margin: 0
+                      }}
+                    >
+                      Standalone Playback
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={handleLeaveRoom}
@@ -1049,19 +1062,6 @@ function App() {
                   >
                     Leave Room
                   </button>
-                  {userRole === 'follower' && (
-                    <button
-                      type="button"
-                      onClick={handleToggleIndependentMode}
-                      className="mp4-requester-button"
-                      style={{ 
-                        backgroundColor: '#6c757d',
-                        margin: 0
-                      }}
-                    >
-                      Standalone Playback
-                    </button>
-                  )}
                 </div>
               </div>
             )}
@@ -1069,6 +1069,7 @@ function App() {
             {/* Independent mode controls */}
             {isIndependentMode && (
               <div style={{
+                marginTop: '10px',  
                 marginBottom: '20px',
                 padding: '15px',
                 backgroundColor: '#fff3cd',
@@ -1083,18 +1084,10 @@ function App() {
                 <div style={{ flex: '1', minWidth: '200px' }}>
                   <strong>Standalone Playback Mode</strong>
                   <p style={{ margin: '5px 0 0 0', fontSize: '0.9em', color: '#856404' }}>
-                    You are playing independently from the group
+                    You are playing independently from the leader
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    onClick={handleLeaveRoom}
-                    className="mp4-requester-button"
-                    style={{ backgroundColor: '#dc3545', margin: 0 }}
-                  >
-                    Leave Room
-                  </button>
                   <button
                     type="button"
                     onClick={handleToggleIndependentMode}
@@ -1104,7 +1097,15 @@ function App() {
                       margin: 0
                     }}
                   >
-                    Re-Sync with Group
+                    Re-Sync with Leader
+                  </button>
+                   <button
+                    type="button"
+                    onClick={handleLeaveRoom}
+                    className="mp4-requester-button"
+                    style={{ backgroundColor: '#dc3545', margin: 0 }}
+                  >
+                    Leave Room
                   </button>
                 </div>
               </div>
@@ -1125,7 +1126,7 @@ function App() {
         )}
 
         {videoUrl && (
-          <div className="mp4-requester-video-container" style={{ position: 'relative' }}>
+          <div className="mp4-requester-video-container">
             <video
               ref={videoRef}
               controls={userRole === 'leader' || (userRole === 'follower' && isIndependentMode)}
@@ -1200,7 +1201,7 @@ function App() {
                 left: '10px',
                 width: '32px',
                 height: '32px',
-                backgroundColor: showPlaybackInfo ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 0, 0, 0.6)',
+                backgroundColor: showPlaybackInfo ? '#577B9F' : 'rgba(0, 0, 0, 0.6)',
                 color: 'white',
                 borderRadius: '50%',
                 display: 'flex',
@@ -1215,11 +1216,11 @@ function App() {
                 zIndex: 10
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = showPlaybackInfo ? 'rgba(40, 167, 69, 1)' : 'rgba(0, 0, 0, 0.8)'
+                e.currentTarget.style.backgroundColor = showPlaybackInfo ? '#577B9F' : 'rgba(0, 0, 0, 0.8)'
                 e.currentTarget.style.transform = 'scale(1.1)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = showPlaybackInfo ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 0, 0, 0.6)'
+                e.currentTarget.style.backgroundColor = showPlaybackInfo ? '#577B9F' : 'rgba(0, 0, 0, 0.6)'
                 e.currentTarget.style.transform = 'scale(1)'
               }}
             >

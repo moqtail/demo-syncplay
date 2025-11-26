@@ -64,11 +64,10 @@ export function SyncStatusIndicator({
     if (!isConnected) return '#dc3545';
     
     if (role === 'leader') {
-      return '#007bff';
+      return '#577B9F';
     } else {
       if (syncDelta === undefined) return '#6c757d';
       if (syncDelta < threshold) return '#28a745';
-      if (syncDelta < threshold * 2) return '#ffc107';
       return '#dc3545';
     }
   };
@@ -97,7 +96,7 @@ export function SyncStatusIndicator({
         <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#495057' }}>
           <span>👤 {totalUsers === 1 ? 'User' : 'Users'}: {totalUsers}</span>
           {role === 'leader' ? (
-            <span style={{ fontWeight: 'bold', color: '#007bff' }}>👑 You are the Leader</span>
+            <span style={{ fontWeight: 'bold', color: '#577B9F' }}>👑 You are the Leader</span>
           ) : (
             <span>
               👑 Leader: {leaderName || 'None'}
@@ -172,7 +171,7 @@ export function SyncStatusIndicator({
                       padding: '4px 10px',
                       fontSize: '14px',
                       fontWeight: 'bold',
-                      backgroundColor: threshold * 1000 <= minDriftMs ? '#e9ecef' : '#007bff',
+                      backgroundColor: threshold * 1000 <= minDriftMs ? '#e9ecef' : '#577B9F',
                       color: threshold * 1000 <= minDriftMs ? '#6c757d' : 'white',
                       border: 'none',
                       borderRadius: '4px',
@@ -191,7 +190,7 @@ export function SyncStatusIndicator({
                       padding: '4px 10px',
                       fontSize: '14px',
                       fontWeight: 'bold',
-                      backgroundColor: threshold * 1000 >= maxDriftMs ? '#e9ecef' : '#007bff',
+                      backgroundColor: threshold * 1000 >= maxDriftMs ? '#e9ecef' : '#577B9F',
                       color: threshold * 1000 >= maxDriftMs ? '#6c757d' : 'white',
                       border: 'none',
                       borderRadius: '4px',

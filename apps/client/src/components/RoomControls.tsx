@@ -171,7 +171,7 @@ export function RoomControls({
       )}
 
       <div className="notice">
-        Max. number of rooms: {config?.maxRoomCount ?? 'Loading...'} | Max. number of users: {config?.maxUsersPerRoom ?? 'Loading...'}
+        Max. number of rooms: {config?.maxRoomCount ?? 'Loading...'} | Max. number of users per room: {config?.maxUsersPerRoom ?? 'Loading...'}
         <br />
         Commit ID:
       </div>

@@ -59,8 +59,6 @@ export function RoomControls({
 
   return (
     <div className="join-form">
-      <h2>SyncPlay Rooms</h2>
-
       <div className="join-field">
         <label htmlFor="userName" className="join-label">
           Your Name
@@ -171,6 +169,12 @@ export function RoomControls({
           </button>
         </div>
       )}
+
+      <div className="notice">
+        Max. number of rooms: {config?.maxRoomCount ?? 'Loading...'} | Max. number of users: {config?.maxUsersPerRoom ?? 'Loading...'}
+        <br />
+        Commit ID:
+      </div>
     </div>
   );
 }

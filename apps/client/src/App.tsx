@@ -962,7 +962,9 @@ function App() {
       <div className="mp4-requester-content">
         {currentPage === 'lobby' ? (
           <>
-            <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>SyncPlay - Room Lobby</h1>
+            <h1 className="mp4-requester-title">
+  SyncPlay - Room Lobby
+</h1>
             
             {/* Optional Subscribe Button */}
             <div style={{ 

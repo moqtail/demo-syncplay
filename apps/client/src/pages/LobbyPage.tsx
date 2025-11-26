@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { RoomControls } from '../components/RoomControls'
 import type { SyncPlayService } from '../services/SyncPlayService'
 import type { ServerConfig, RoomInfo } from '../types'
+import '../App.css'
 
 interface LobbyPageProps {
   syncService: SyncPlayService | null
@@ -45,29 +46,25 @@ export default function LobbyPage({
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>SyncPlay - Room Lobby</h1>
-      {joinError && (
-        <div
-          style={{
-            padding: '10px',
-            marginBottom: '20px',
-            backgroundColor: '#fee',
-            border: '1px solid #c00',
-            borderRadius: '4px',
-            color: '#c00',
-          }}
-        >
-          {joinError}
-        </div>
-      )}
-      <RoomControls
-        config={serverConfig}
-        rooms={rooms}
-        onJoinRoom={handleJoinRoom}
-        onRequestRooms={onRequestRooms}
-        onRequestConfig={onRequestConfig}
-      />
+    <div className="join-container">
+      <div className="join-content">
+        <h1>SyncPlay - Room Lobby</h1>
+        
+        {joinError && (
+          <div className="compatibility-error">
+            <strong>Error</strong>
+            <p>{joinError}</p>
+          </div>
+        )}
+        
+        <RoomControls
+          config={serverConfig}
+          rooms={rooms}
+          onJoinRoom={handleJoinRoom}
+          onRequestRooms={onRequestRooms}
+          onRequestConfig={onRequestConfig}
+        />
+      </div>
     </div>
   )
 }

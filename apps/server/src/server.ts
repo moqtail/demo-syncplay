@@ -18,7 +18,6 @@ const serverConfig: ServerConfig = {
   maxUsersPerRoom: parseInt(process.env.MAX_USERS_PER_ROOM || '3'),
   videoCatalog: [
     { id: 'video1', name: 'BBB', trackName: 'moqtail/bbb' },
-    { id: 'video2', name: 'AVGEN', trackName: 'moqtail/avgen' },
   ],
 };
 

@@ -1,10 +1,19 @@
+/* Global reset & layout */
+
+html,
+body,
 #root {
   margin: 0;
   padding: 0;
-  width: 100vw;
-  min-height: 100vh;
+  width: 100%;
+  height: 100%;
 }
 
+body {
+  font-family: 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* (Optional) you can keep the logo styles if you still use them */
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -18,25 +27,323 @@
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* ------------------------------
+   LOGIN / LOBBY SHARED STYLING
+   ------------------------------ */
+
+.join-container {
+  width: 100vw;
+  height: 100vh;
+
+  display: flex;
+  align-items: center;      /* vertical center */
+  justify-content: center;  /* horizontal center */
+
+  flex-direction: column;   /* center column layout */
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+.join-logo {
+  flex-shrink: 1;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.join-logo img {
+  max-height: 100%;
+  width: 100%;
+  display: block;
+  object-fit: contain;
+  max-height: 500px;
+}
+
+.join-content {
+  max-width: 360px;
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Basic nav / links (if you use them) */
+.join-nav {
+  display: flex;
+  gap: 1.6rem;
+  margin-bottom: 0rem;
+  font-size: 0.875rem;
+  font-weight: 200;
+}
+
+.join-link {
+  color: #577B9F;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.join-link:hover {
+  color: #34495e;
+  text-decoration: underline;
+}
+
+/* Headings */
+
+h1 {
+  font-size: 2.25rem;
+  margin-bottom: 0.2rem;
+  color: #2c3e50;
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 400;
+}
+
+h2 {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #34495e;
+  margin-top: 0;
+  font-size: 1.3rem;
+}
+
+h3 {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+  color: #34495e;
+  margin-top: 0;
+  font-size: 1.05rem;
+}
+
+/* Form layout */
+
+.join-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0rem;
+}
+
+/* Fields */
+
+.join-field {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.join-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #34495e;
+}
+
+/* Inputs */
+
+.join-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  font-size: 1.1rem;
+  border: 1.8px solid #ddd;
+  border-radius: 6px;
+  background-color: transparent;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  outline-offset: 2px;
+  box-sizing: border-box;
+}
+
+.join-input:focus {
+  border-color: #D74401;
+  box-shadow: 0 0 8px rgb(52, 74, 96);
+}
+
+.join-input:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Buttons */
+
+.join-button {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  background-color: #577B9F;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.25s;
+}
+
+.join-button:hover {
+  background-color: #D74401;
+}
+
+.join-button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.join-button:disabled:hover {
+  background-color: #bdc3c7;
+}
+
+/* Secondary variant */
+
+.join-button.join-button--secondary {
+  margin-top: 0rem;
+  background-color: #95a5a6;
+}
+
+.join-button.join-button--secondary:hover {
+  background-color: #7f8c8d;
+}
+
+/* Error box */
+
+.error-message {
+  color: #e74c3c;
+  margin-top: 1rem;
+  font-weight: 600;
+}
+
+.compatibility-error {
+  background-color: #fdf2f2;
+  border: 2px solid #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  text-align: left;
+  width: 100%;
+}
+
+.compatibility-error strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.compatibility-error p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Rooms layout */
+
+.rooms-section {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.rooms-title {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 0.75rem 0 0.5rem;
+  color: #34495e;
+}
+
+.rooms-empty {
+  color: #6c757d;
+  font-style: italic;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.room-card {
+  padding: 0.9rem 1rem;
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.room-card-info {
+  flex: 1;
+}
+
+.room-card-title {
+  font-weight: 600;
+  font-size: 0.98rem;
+  margin-bottom: 0.2rem;
+  color: #2c3e50;
+}
+
+.room-card-meta {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.create-room-card {
+  width: 100%;
+  margin-top: 1.2rem;
+  padding: 1.1rem 1.2rem;
+  background-color: #ffffff;
+  border: 1px solid #ecf0f1;
+  border-radius: 8px;
+  text-align: left;
+}
+
+/* Mobile styles */
+
+@media (max-width: 600px) {
+  .join-logo {
+    max-height: 250px;
+    min-height: 100px;
+    width: 100%;
+    margin-top: -10px;
   }
-}
 
-.card {
-  padding: 2em;
-}
+  .join-logo img {
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
 
-.read-the-docs {
-  color: #888;
+  .join-container {
+    flex-direction: column;
+    gap: 0rem;
+    padding: 1rem;
+  }
+
+  .join-content {
+    max-width: 100%;
+    max-height: 60rem;
+    padding: 1px;
+    overflow: hidden;
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0rem;
+  }
+
+  .join-button {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+  }
 }

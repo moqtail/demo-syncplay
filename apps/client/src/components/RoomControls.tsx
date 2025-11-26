@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { UserRole, RoomInfo, ServerConfig } from '../types';
+import '../App.css'
 
 interface RoomControlsProps {
   onJoinRoom: (roomId: string, role: UserRole, userName: string, videoId: string) => void;
@@ -57,30 +58,11 @@ export function RoomControls({
   };
 
   return (
-    <div
-      style={{
-        padding: '24px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: '12px',
-        border: '2px solid #dee2e6',
-        maxWidth: '800px',
-        margin: '0 auto',
-      }}
-    >
-      <h2 style={{ marginTop: 0, marginBottom: '20px', color: '#212529' }}>
-        SyncPlay Rooms
-      </h2>
+    <div className="join-form">
+      <h2>SyncPlay Rooms</h2>
 
-      <div style={{ marginBottom: '20px' }}>
-        <label
-          htmlFor="userName"
-          style={{
-            display: 'block',
-            marginBottom: '6px',
-            fontWeight: '600',
-            color: '#495057',
-          }}
-        >
+      <div className="join-field">
+        <label htmlFor="userName" className="join-label">
           Your Name
         </label>
         <input
@@ -90,63 +72,36 @@ export function RoomControls({
           onChange={(e) => setUserName(e.target.value)}
           placeholder="Enter your name"
           disabled={disabled}
-          style={{
-            width: '100%',
-            padding: '10px',
-            fontSize: '16px',
-            border: '1px solid #ced4da',
-            borderRadius: '6px',
-            boxSizing: 'border-box',
-          }}
+          className="join-input"
         />
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
-        <h3 style={{ marginBottom: '12px', color: '#212529' }}>Available Rooms</h3>
+      <div className="rooms-section">
+        <h3 className="rooms-title">Available Rooms</h3>
         {rooms.length === 0 ? (
-          <p style={{ color: '#6c757d', fontStyle: 'italic', marginBottom: '16px' }}>
+          <p className="rooms-empty">
             No active rooms. Create a new room to get started!
           </p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+          <div className="room-list">
             {rooms.map((room) => (
-              <div
-                key={room.id}
-                style={{
-                  padding: '16px',
-                  backgroundColor: 'white',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '600', fontSize: '16px', marginBottom: '4px' }}>
+              <div key={room.id} className="room-card">
+                <div className="room-card-info">
+                  <div className="room-card-title">
                     {room.id}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                  <div className="room-card-meta">
                     Video: {room.videoName}
                   </div>
-                  <div style={{ fontSize: '14px', color: '#6c757d' }}>
-                    Users: {room.userCount} | Leader: {room.leaderName || 'None'}
+                  <div className="room-card-meta">
+                    {room.userCount === 1 ? 'User' : 'Users'}: {room.userCount} | Leader: {room.leaderName || 'None'}
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleJoinExistingRoom(room)}
                   disabled={disabled || !room.hasLeader}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: 'white',
-                    backgroundColor: !room.hasLeader ? '#6c757d' : '#28a745',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: !room.hasLeader ? 'not-allowed' : 'pointer',
-                  }}
+                  className="join-button"
                 >
                   {room.hasLeader ? 'Join' : 'No Leader'}
                 </button>
@@ -158,41 +113,18 @@ export function RoomControls({
         <button
           type="button"
           onClick={() => setShowCreateForm(!showCreateForm)}
-          style={{
-            width: '100%',
-            padding: '12px 20px',
-            fontSize: '16px',
-            fontWeight: '600',
-            color: 'white',
-            backgroundColor: showCreateForm ? '#6c757d' : '#28a745',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-          }}
+          className={`join-button ${showCreateForm ? 'join-button--secondary' : ''}`}
         >
           {showCreateForm ? 'Cancel' : 'Create New Room'}
         </button>
       </div>
 
       {showCreateForm && (
-        <div style={{ 
-          padding: '20px', 
-          backgroundColor: 'white', 
-          border: '2px solid #28a745',
-          borderRadius: '8px'
-        }}>
-          <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#212529' }}>Create New Room</h3>
+        <div className="create-room-card">
+          <h3 className="rooms-title">Create New Room</h3>
           
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              htmlFor="newRoomId"
-              style={{
-                display: 'block',
-                marginBottom: '6px',
-                fontWeight: '600',
-                color: '#495057',
-              }}
-            >
+          <div className="join-field">
+            <label htmlFor="newRoomId" className="join-label">
               Room Name
             </label>
             <input
@@ -202,27 +134,12 @@ export function RoomControls({
               onChange={(e) => setNewRoomId(e.target.value)}
               placeholder="Enter room name"
               disabled={disabled}
-              style={{
-                width: '100%',
-                padding: '10px',
-                fontSize: '16px',
-                border: '1px solid #ced4da',
-                borderRadius: '6px',
-                boxSizing: 'border-box',
-              }}
+              className="join-input"
             />
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              htmlFor="videoSelect"
-              style={{
-                display: 'block',
-                marginBottom: '6px',
-                fontWeight: '600',
-                color: '#495057',
-              }}
-            >
+          <div className="join-field">
+            <label htmlFor="videoSelect" className="join-label">
               Select Video
             </label>
             <select
@@ -230,14 +147,7 @@ export function RoomControls({
               value={selectedVideo}
               onChange={(e) => setSelectedVideo(e.target.value)}
               disabled={disabled || !config || config.videoCatalog.length === 0}
-              style={{
-                width: '100%',
-                padding: '10px',
-                fontSize: '16px',
-                border: '1px solid #ced4da',
-                borderRadius: '6px',
-                boxSizing: 'border-box',
-              }}
+              className="join-input"
             >
               {!config || config.videoCatalog.length === 0 ? (
                 <option value="">Loading videos...</option>
@@ -255,17 +165,7 @@ export function RoomControls({
             type="button"
             onClick={handleCreateRoom}
             disabled={disabled}
-            style={{
-              width: '100%',
-              padding: '12px 20px',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: 'white',
-              backgroundColor: disabled ? '#6c757d' : '#28a745',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: disabled ? 'not-allowed' : 'pointer',
-            }}
+            className="join-button"
           >
             Create Room as Leader
           </button>

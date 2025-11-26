@@ -58,7 +58,7 @@ export function SyncStatusIndicator({
           🎬 Room: {roomId}
         </h3>
         <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#495057' }}>
-          <span>👤 Users: {totalUsers}</span>
+          <span>👤 {totalUsers === 1 ? 'User' : 'Users'}: {totalUsers}</span>
           {role === 'leader' ? (
             <span style={{ fontWeight: 'bold', color: '#007bff' }}>👑 You are the Leader</span>
           ) : (
@@ -86,7 +86,7 @@ export function SyncStatusIndicator({
         </span>
         {role === 'follower' && syncDelta !== undefined && (
           <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#6c757d' }}>
-            Δ {syncDelta.toFixed(2)}s
+            ± {syncDelta.toFixed(2)}s
           </span>
         )}
       </div>

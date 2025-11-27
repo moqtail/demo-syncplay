@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import type { RequestState, UserRole, SyncConfig, RoomStateMessage, RoomInfo, ServerConfig, ErrorMessage } from './types'
-import { 
-  disconnectMOQ, 
-  subscribeToDemo, 
-  requestInitWithMOQ, 
-  requestFragmentRangeBodyWithMOQ ,
+import {
+  disconnectMOQ,
+  subscribeToDemo,
+  requestInitWithMOQ,
+  requestFragmentRangeBodyWithMOQ,
   fetchRangeStreamingWithMOQ,
 } from './moq-api'
 import { SyncPlayService } from './services/SyncPlayService'
@@ -18,8 +18,8 @@ const MSE_MIME = 'video/mp4; codecs="avc1.64001F, mp4a.40.2"'
 
 // TODO: AppSettings should be moved to public appsettings
 interface AppSettings {
-  groupsPerSecond: number       
-  objectsPerGroup: number       
+  groupsPerSecond: number
+  objectsPerGroup: number
   fetchAheadSeconds: number     // Ahead buffer size in seconds
   backBufferSeconds: number     // Recently played buffer size in seconds
   maxBufferSeconds: number      // Total buffer size in seconds
@@ -55,18 +55,17 @@ function App() {
     ...DEFAULT_SYNC_CONFIG,
     deltaThresholdSeconds: appSettings.defaultMaxAllowedDriftMs / 1000,
   })
-  
+
   const [requestState, setRequestState] = useState<RequestState>({
     isLoading: false,
     error: null,
   })
-  
+
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  const [hasJoinedRoom, setHasJoinedRoom] = useState(false)
   const [relaySubscribed, setRelaySubscribed] = useState(false)
-  
+
   // Routing state
   const [currentPage, setCurrentPage] = useState<'lobby' | 'room'>('lobby')
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null)
@@ -92,29 +91,29 @@ function App() {
   const appendingRef = useRef(false)
   const streamingRef = useRef(false)
   const nextGroupRef = useRef<number>(1)
-  
+
   // Buffer management
   const bufferedRangesRef = useRef<Set<number>>(new Set()) // Track which groups are buffered
   const isSeeking = useRef(false)
   const hasJumpedAheadRef = useRef(false) // Track if follower has jumped to leader's position
-  
+
   // For followers: track leader's position
   const leaderPositionRef = useRef<{ time: number; group: number } | null>(null)
-  
+
   // For followers: track independent playback mode
   const [isIndependentMode, setIsIndependentMode] = useState(false)
-  
+
   // Toggle for playback info overlay
   const [showPlaybackInfo, setShowPlaybackInfo] = useState(false)
-  
+
   // Toggle for volume control hover
   const [showVolumeControl, setShowVolumeControl] = useState(false)
-  
+
   // Track volume level for display
   const [volume, setVolume] = useState(100)
 
   // ============ UTILITY FUNCTIONS ============
-  
+
   // Sync URL with state
   useEffect(() => {
     const path = window.location.pathname
@@ -146,7 +145,7 @@ function App() {
       if (path === '/' || path === '') {
         setCurrentPage('lobby')
         setCurrentRoomId(null)
-        setHasJoinedRoom(false)
+        // setHasJoinedRoom(false)
       } else {
         const roomId = path.substring(1)
         if (roomId) {
@@ -159,7 +158,7 @@ function App() {
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
-  
+
   const timeToGroup = useCallback((timeSeconds: number): number => {
     return Math.floor(timeSeconds * settings.groupsPerSecond)
   }, [settings.groupsPerSecond])
@@ -273,7 +272,7 @@ function App() {
           `cleanupBuffer: removing fully old range [${removeStart.toFixed(2)}, ${removeEnd.toFixed(2)}], mainStart=${mainStart.toFixed(2)}`
         )
       }
-      
+
       else if (last.start >= mainEnd) {
         removeStart = last.start
         removeEnd = last.end
@@ -335,12 +334,12 @@ function App() {
 
   const handleSyncRequired = useCallback(async (targetTime: number, targetGroup: number) => {
     console.log(`[App] Sync required: fetching group ${targetGroup} for time ${targetTime.toFixed(2)}s`)
-    
+
     // Update leader position ref for followers
     if (userRole === 'follower') {
       leaderPositionRef.current = { time: targetTime, group: targetGroup }
     }
-    
+
     const fetchAheadGroups = settings.fetchAheadSeconds * settings.groupsPerSecond
     const endGroup = targetGroup + fetchAheadGroups - 1
 
@@ -425,7 +424,7 @@ function App() {
               ...currentState,
               totalUsers: message.totalUsers,
             }
-            
+
             if (message.newLeaderId) {
               if (message.newLeaderId === currentState.userId) {
                 console.log('[App] Promoted to leader')
@@ -434,7 +433,7 @@ function App() {
               }
               updatedState.leaderId = message.newLeaderId
             }
-            
+
             return updatedState
           }
           return currentState
@@ -446,7 +445,7 @@ function App() {
       console.error('[App] Sync error:', error)
       alert(`Sync Error: ${error.message}`)
       setRequestState({ isLoading: false, error: error.message })
-      setHasJoinedRoom(false)
+      // setHasJoinedRoom(false)
     })
 
     service.onRoomsList((response) => {
@@ -522,7 +521,7 @@ function App() {
       const unsubError = syncService.onError(handleErrorOnce)
 
       syncService.joinRoom(roomId, role, userName, trackName)
-      
+
       await new Promise(resolve => setTimeout(resolve, 800))
 
       unsubRoomState()
@@ -537,16 +536,16 @@ function App() {
         setRequestState({ isLoading: false, error: 'Failed to join room' })
         return
       }
-      
+
       // Navigate to room page
       setCurrentRoomId(roomId)
       setCurrentPage('room')
-      
+
       if (!relaySubscribed) {
         await subscribeToDemo()
         setRelaySubscribed(true)
       }
-      
+
       await handleJoinRoomClick()
 
     } catch (err) {
@@ -555,17 +554,17 @@ function App() {
         isLoading: false,
         error: err instanceof Error ? err.message : String(err),
       })
-      setHasJoinedRoom(false)
+      // setHasJoinedRoom(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncService, relaySubscribed, serverConfig])
 
   const handleLeaveRoom = useCallback(() => {
     console.log('[App] Leaving room...')
-    
+
     // Stop streaming first
     streamingRef.current = false
-    
+
     // Clean up video resources
     if (videoUrl) {
       URL.revokeObjectURL(videoUrl)
@@ -578,16 +577,16 @@ function App() {
         console.warn('Failed to end MediaSource:', e)
       }
     }
-    
+
     // Reset refs and state
     mediaSourceRef.current = null
     sourceBufferRef.current = null
     hasJumpedAheadRef.current = false
-    setHasJoinedRoom(false)
+    // setHasJoinedRoom(false)
     setUserRole(null)
     setRoomState(null)
     setIsIndependentMode(false)
-    
+
     // Disconnect and reconnect to properly leave the room on the server
     // disconnect() will close the WebSocket, which triggers the server's disconnect handler
     // This removes the user from the room and broadcasts the update
@@ -604,7 +603,7 @@ function App() {
         })
       }, 100)
     }
-    
+
     // Navigate back to lobby
     setCurrentPage('lobby')
     setCurrentRoomId(null)
@@ -612,11 +611,11 @@ function App() {
 
   const handleToggleIndependentMode = useCallback(() => {
     if (userRole !== 'follower') return
-    
+
     setIsIndependentMode(prev => {
       const newMode = !prev
       console.log(`[App] Follower ${newMode ? 'entering' : 'exiting'} independent mode`)
-      
+
       if (!newMode) {
         // When re-syncing, immediately sync to leader's current position
         const video = videoRef.current
@@ -625,7 +624,7 @@ function App() {
           video.currentTime = leaderPositionRef.current.time
         }
       }
-      
+
       return newMode
     })
   }, [userRole])
@@ -633,9 +632,9 @@ function App() {
   const handleJoinRoomClick = async () => {
     try {
       setRequestState({ isLoading: true, error: null })
-      setHasJoinedRoom(true)
+      // setHasJoinedRoom(true)
       streamingRef.current = true
-      
+
       nextGroupRef.current = 1
 
       const ms = new MediaSource()
@@ -668,86 +667,86 @@ function App() {
 
             resolve()
 
-            // Start the streaming loop in the background
-            ;(async () => {
-              try {
-                while (streamingRef.current) {
-                  const video = videoRef.current
-                  
-                  // For followers, use leader's position; for leader, use own position
-                  let currentTimeSeconds: number
-                  let currentGroup: number
-                  
-                  if (userRole === 'follower' && leaderPositionRef.current) {
-                    // Follower: use leader's position for fetching
-                    currentTimeSeconds = leaderPositionRef.current.time
-                    currentGroup = leaderPositionRef.current.group
-                    console.log(`[Follower] Using leader position: t=${currentTimeSeconds.toFixed(2)}s, g=${currentGroup}`)
-                  } else {
-                    // Leader or follower without sync yet: use own position
-                    currentTimeSeconds = video?.currentTime || 0
-                    currentGroup = timeToGroup(currentTimeSeconds)
-                  }
-                  
-                  const fetchAheadGroups = settings.fetchAheadSeconds * settings.groupsPerSecond
-                  const maxGroupToFetch = currentGroup + fetchAheadGroups
-
-                  // For followers: on first join, jump to leader's position to fetch relevant data immediately
-                  // This works for BOTH paused and playing video
-                  if (userRole === 'follower' && leaderPositionRef.current && !hasJumpedAheadRef.current && currentGroup > 1) {
-                    // Keep a small buffer (2 seconds) before the current position for smooth playback
-                    const backBuffer = 2
-                    const jumpToGroup = Math.max(1, currentGroup - backBuffer)
-                    console.log(`[Follower] Initial jump to leader position: nextGroup ${nextGroupRef.current} → ${jumpToGroup} (leader at group ${currentGroup})`)
-                    nextGroupRef.current = jumpToGroup
-                    hasJumpedAheadRef.current = true
-                  }
-
-                  if (nextGroupRef.current <= maxGroupToFetch) {
-                    const targetGroup = nextGroupRef.current
-
-                    if (!isRangeBuffered(targetGroup, targetGroup)) {
-                      console.log(
-                        `Fetching group ${targetGroup} via MOQ (t=${currentTimeSeconds.toFixed(2)}s, g_cur=${currentGroup}, g_max=${maxGroupToFetch})`
-                      );
-
-                      await fetchRangeStreamingWithMOQ(
-                        targetGroup,
-                        0,
-                        targetGroup,
-                        0,
-                        (payload) => {
-                          enqueueAppend(payload);
-                        },
-                      );
-
-                      markGroupsBuffered(targetGroup, targetGroup);
-                      nextGroupRef.current = targetGroup + 1;
-                    } else {
-                      nextGroupRef.current++;
-                    }
-                  } else {
-                    // Fetch is filled, just wait
-                  }
-
-                  cleanupBuffer(currentTimeSeconds)
-                  // throttle
-                  await new Promise(r => setTimeout(r, settings.fetchThrottleMs))
-                }
-              } catch (err) {
-                console.error('Streaming loop failed', err)
-                setRequestState({
-                  isLoading: false,
-                  error: err instanceof Error ? err.message : String(err),
-                })
-                streamingRef.current = false
+              // Start the streaming loop in the background
+              ; (async () => {
                 try {
-                  ms.endOfStream('network')
-                } catch (e) {
-                  console.error('Failed to end stream:', e)
+                  while (streamingRef.current) {
+                    const video = videoRef.current
+
+                    // For followers, use leader's position; for leader, use own position
+                    let currentTimeSeconds: number
+                    let currentGroup: number
+
+                    if (userRole === 'follower' && leaderPositionRef.current) {
+                      // Follower: use leader's position for fetching
+                      currentTimeSeconds = leaderPositionRef.current.time
+                      currentGroup = leaderPositionRef.current.group
+                      console.log(`[Follower] Using leader position: t=${currentTimeSeconds.toFixed(2)}s, g=${currentGroup}`)
+                    } else {
+                      // Leader or follower without sync yet: use own position
+                      currentTimeSeconds = video?.currentTime || 0
+                      currentGroup = timeToGroup(currentTimeSeconds)
+                    }
+
+                    const fetchAheadGroups = settings.fetchAheadSeconds * settings.groupsPerSecond
+                    const maxGroupToFetch = currentGroup + fetchAheadGroups
+
+                    // For followers: on first join, jump to leader's position to fetch relevant data immediately
+                    // This works for BOTH paused and playing video
+                    if (userRole === 'follower' && leaderPositionRef.current && !hasJumpedAheadRef.current && currentGroup > 1) {
+                      // Keep a small buffer (2 seconds) before the current position for smooth playback
+                      const backBuffer = 2
+                      const jumpToGroup = Math.max(1, currentGroup - backBuffer)
+                      console.log(`[Follower] Initial jump to leader position: nextGroup ${nextGroupRef.current} → ${jumpToGroup} (leader at group ${currentGroup})`)
+                      nextGroupRef.current = jumpToGroup
+                      hasJumpedAheadRef.current = true
+                    }
+
+                    if (nextGroupRef.current <= maxGroupToFetch) {
+                      const targetGroup = nextGroupRef.current
+
+                      if (!isRangeBuffered(targetGroup, targetGroup)) {
+                        console.log(
+                          `Fetching group ${targetGroup} via MOQ (t=${currentTimeSeconds.toFixed(2)}s, g_cur=${currentGroup}, g_max=${maxGroupToFetch})`
+                        );
+
+                        await fetchRangeStreamingWithMOQ(
+                          targetGroup,
+                          0,
+                          targetGroup,
+                          0,
+                          (payload) => {
+                            enqueueAppend(payload);
+                          },
+                        );
+
+                        markGroupsBuffered(targetGroup, targetGroup);
+                        nextGroupRef.current = targetGroup + 1;
+                      } else {
+                        nextGroupRef.current++;
+                      }
+                    } else {
+                      // Fetch is filled, just wait
+                    }
+
+                    cleanupBuffer(currentTimeSeconds)
+                    // throttle
+                    await new Promise(r => setTimeout(r, settings.fetchThrottleMs))
+                  }
+                } catch (err) {
+                  console.error('Streaming loop failed', err)
+                  setRequestState({
+                    isLoading: false,
+                    error: err instanceof Error ? err.message : String(err),
+                  })
+                  streamingRef.current = false
+                  try {
+                    ms.endOfStream('network')
+                  } catch (e) {
+                    console.error('Failed to end stream:', e)
+                  }
                 }
-              }
-            })()
+              })()
           } catch (e) {
             reject(e)
             console.error('Error in sourceopen handler', e)
@@ -770,15 +769,15 @@ function App() {
       })
     } catch (err) {
       console.error('Join room failed', err)
-      setRequestState({ 
-        isLoading: false, 
-        error: err instanceof Error ? err.message : String(err) 
+      setRequestState({
+        isLoading: false,
+        error: err instanceof Error ? err.message : String(err)
       })
     }
   }
 
   // ============ VIDEO EVENT HANDLERS ============
-  
+
   const handleSeeking = useCallback(async () => {
     const video = videoRef.current
     if (!video || isSeeking.current) return
@@ -789,7 +788,7 @@ function App() {
     const endGroup = seekGroup + fetchAheadGroups - 1
 
     console.log(`Seeking to ${seekTime.toFixed(2)}s (group ${seekGroup})`)
-    
+
     if (!isRangeBuffered(seekGroup, Math.min(seekGroup + 5, endGroup))) {
       isSeeking.current = true
       setRequestState({ isLoading: true, error: null })
@@ -864,9 +863,9 @@ function App() {
       if (!initialState) return
 
       console.log(`[App] Applying initial playback state for follower: ${initialState.timestamp.toFixed(2)}s, playing: ${initialState.isPlaying}`)
-      
+
       video.currentTime = initialState.timestamp
-      
+
       if (initialState.isPlaying) {
         // For playing video, wait for enough data to be buffered before playing
         const tryPlay = () => {
@@ -963,11 +962,11 @@ function App() {
         {currentPage === 'lobby' ? (
           <>
             <h1 className="mp4-requester-title">
-  SyncPlay - Room Lobby
-</h1>
-            
+              SyncPlay - Room Lobby
+            </h1>
+
             {/* Optional Subscribe Button */}
-            <div style={{ 
+            <div style={{
               padding: '16px',
               backgroundColor: '#f8f9fa',
               borderRadius: '8px',
@@ -990,13 +989,13 @@ function App() {
                 {relaySubscribed ? '✓ Subscribed to Relay' : 'Subscribe to Relay (Optional)'}
               </button>
               <p style={{ fontSize: '0.85em', color: '#6c757d', marginTop: '8px', marginBottom: 0 }}>
-                {relaySubscribed 
+                {relaySubscribed
                   ? 'Relay connection established'
                   : 'Subscribe manually if needed (auto-subscribes on join)'}
               </p>
             </div>
 
-            <RoomControls 
+            <RoomControls
               onJoinRoom={handleJoinRoom}
               onRequestRooms={handleRequestRooms}
               onRequestConfig={handleRequestConfig}
@@ -1046,7 +1045,7 @@ function App() {
                       type="button"
                       onClick={handleToggleIndependentMode}
                       className="mp4-requester-button"
-                      style={{ 
+                      style={{
                         backgroundColor: '#577B9F',
                         margin: 0
                       }}
@@ -1069,7 +1068,7 @@ function App() {
             {/* Independent mode controls */}
             {isIndependentMode && (
               <div style={{
-                marginTop: '10px',  
+                marginTop: '10px',
                 marginBottom: '20px',
                 padding: '15px',
                 backgroundColor: '#fff3cd',
@@ -1092,14 +1091,14 @@ function App() {
                     type="button"
                     onClick={handleToggleIndependentMode}
                     className="mp4-requester-button"
-                    style={{ 
+                    style={{
                       backgroundColor: '#28a745',
                       margin: 0
                     }}
                   >
                     Re-Sync with Leader
                   </button>
-                   <button
+                  <button
                     type="button"
                     onClick={handleLeaveRoom}
                     className="mp4-requester-button"
@@ -1134,7 +1133,7 @@ function App() {
               src={videoUrl}
               onContextMenu={(e) => e.preventDefault()}
             />
-            
+
             {/* Custom volume control for synced followers */}
             {userRole === 'follower' && !isIndependentMode && (
               <div
@@ -1153,10 +1152,10 @@ function App() {
                   transition: 'width 0.2s ease',
                 }}
               >
-                <svg 
-                  width="20" 
-                  height="20" 
-                  viewBox="0 0 24 24" 
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
                   fill="white"
                   style={{ cursor: 'pointer', minWidth: '20px' }}
                 >
@@ -1190,7 +1189,7 @@ function App() {
                 )}
               </div>
             )}
-            
+
             {/* Playback Info Toggle Icon */}
             <div
               onClick={() => setShowPlaybackInfo(!showPlaybackInfo)}
@@ -1226,13 +1225,13 @@ function App() {
             >
               i
             </div>
-            
+
             {/* Playback Info Overlay */}
             {showPlaybackInfo && (() => {
               const minutes = Math.floor(currentTime / 60)
               const seconds = Math.floor(currentTime % 60)
               const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`
-              
+
               return (
                 <div style={{
                   position: 'absolute',

@@ -12,7 +12,7 @@ import {
   FilterType,
   SubscribeError,
   type ControlMessage,
-} from '../../../libs/moqtail-ts/src/index';
+} from 'moqtail-ts';
 
 const MOQ_RELAY_URL = appSettings.relayUrl;
 const SUPPORTED_VERSIONS = [0xFF00000E]; //constants -> draft 14

@@ -4,11 +4,10 @@ services:
       context: .
       dockerfile: Dockerfile.relay
     ports:
-      - '4448:4433/udp'
+      - "4448:4433/udp"
     restart: always
     volumes:
-      - /etc/letsencrypt/live/moqtail.dev/fullchain.pem:/etc/relay/cert/cert.pem:ro
-      - /etc/letsencrypt/live/moqtail.dev/privkey.pem:/etc/relay/cert/key.pem:ro
+      - ./cert:/etc/relay/cert:ro
 
   publisher:
     depends_on:
@@ -17,25 +16,25 @@ services:
       context: apps/publisher
     restart: always
     volumes:
-      - ./out_framefrag.mp4:/usr/src/app/out_framefrag.mp4
+      - ./source.mp4:/usr/src/app/source.mp4
     environment:
       RELAY_URL: "https://relay:4433"
-      
+
   server:
     build:
       context: apps/server
     ports:
-      - '15001:8080'
+      - "15001:8080"
     restart: always
-    
+
   client:
     depends_on:
-    #   - server
+      - server
       - relay
     build:
       context: apps/client
     ports:
-      - '15173:4173'
+      - "15173:4173"
     restart: always
     volumes:
       - ./apps/client/src/assets/appsettings.json:/usr/src/app/dist/appsettings.json:ro

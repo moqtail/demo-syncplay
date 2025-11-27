@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:alpine
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -9,9 +9,10 @@ RUN npm install --prefer-offline --no-audit --progress=false
 
 # Copy application source
 COPY . .
+RUN npm run build
 
 # Expose application port
 EXPOSE 8080
 
 # Start the application
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start"]

@@ -1,9 +1,11 @@
-FROM rust:bookworm
+FROM rust:alpine
 
 WORKDIR /usr/src/app
+
+RUN apk add --no-cache musl-dev openssl-dev
 
 COPY . .
 
 RUN cargo build --release
 
-CMD ["./target/release/publisher", "out_framefrag.mp4"]
+CMD ["./target/release/publisher", "source.mp4"]

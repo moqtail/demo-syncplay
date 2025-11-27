@@ -11,10 +11,10 @@ interface RoomControlsProps {
   config: ServerConfig | null;
 }
 
-export function RoomControls({ 
-  onJoinRoom, 
-  disabled = false, 
-  onRequestRooms, 
+export function RoomControls({
+  onJoinRoom,
+  disabled = false,
+  onRequestRooms,
   onRequestConfig,
   rooms,
   config
@@ -52,8 +52,8 @@ export function RoomControls({
       alert('Please enter your name');
       return;
     }
-    const videoId = config?.videoCatalog.find(v => v.trackName === room.videoName)?.id || 
-                    (config?.videoCatalog[0]?.id || '');
+    const videoId = config?.videoCatalog.find(v => v.trackName === room.videoName)?.id ||
+      (config?.videoCatalog[0]?.id || '');
     onJoinRoom(room.id, 'follower', userName.trim(), videoId);
   };
 
@@ -120,7 +120,7 @@ export function RoomControls({
       {showCreateForm && (
         <div className="create-room-card">
           <h3 className="rooms-title">Create New Room</h3>
-          
+
           <div className="join-field">
             <label htmlFor="newRoomId" className="join-label">
               Room Name
@@ -172,8 +172,12 @@ export function RoomControls({
 
       <div className="notice">
         Max. number of rooms: {config?.maxRoomCount ?? 'Loading...'} | Max. number of users per room: {config?.maxUsersPerRoom ?? 'Loading...'}
-        <br />
-        Commit ID:
+        {import.meta.env.VITE_GIT_COMMIT && (
+          <>
+            <br />
+            Commit ID: {import.meta.env.VITE_GIT_COMMIT}
+          </>
+        )}
       </div>
     </div>
   );

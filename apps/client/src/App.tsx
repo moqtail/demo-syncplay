@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import type { RequestState, UserRole, SyncConfig, RoomStateMessage, RoomInfo, ServerConfig, ErrorMessage } from './types'
+import type { RequestState, UserRole, SyncConfig, RoomStateMessage, RoomInfo, ServerConfig, ErrorMessage, AppSettings } from './types'
 import {
   disconnectMOQ,
   subscribeToDemo,
@@ -28,48 +28,22 @@ import { useSyncPlayback } from './hooks/useSyncPlayback'
 import { RoomControls } from './components/RoomControls'
 import { SyncStatusIndicator } from './components/SyncStatusIndicator'
 import './MP4Requester.css'
-import appSettings from '../src/assets/appsettings.json';
 
 const MSE_MIME = 'video/mp4; codecs="avc1.64001F, mp4a.40.2"'
 
-// TODO: AppSettings should be moved to public appsettings
-interface AppSettings {
-  groupsPerSecond: number
-  objectsPerGroup: number
-  fetchAheadSeconds: number     // Ahead buffer size in seconds
-  backBufferSeconds: number     // Recently played buffer size in seconds
-  maxBufferSeconds: number      // Total buffer size in seconds
-  fetchThrottleMs: number       // Delay between fetch requests
-  autoPlayDelayMs: number       // Delay before auto-playing video for leader (in milliseconds)
-  defaultMaxAllowedDriftMs: number // Maximum allowed drift for sync (in milliseconds)
-  syncMinAllowedDriftMs: number // Minimum allowed drift for sync (in milliseconds)
-  syncMaxAllowedDriftMs: number // Upper limit for drift adjustment (in milliseconds)
-}
-
 const DEFAULT_SYNC_CONFIG: SyncConfig = {
-  deltaThresholdSeconds: appSettings.deltaThresholdSeconds,
-  leaderBroadcastIntervalMs: appSettings.leaderBroadcastIntervalMs,
-  wsUrl: appSettings.wsUrl,
-  wsReconnectDelayMs: appSettings.wsReconnectDelayMs,
+  deltaThresholdSeconds: window.appSettings.deltaThresholdSeconds,
+  leaderBroadcastIntervalMs: window.appSettings.leaderBroadcastIntervalMs,
+  wsUrl: window.appSettings.wsUrl,
+  wsReconnectDelayMs: window.appSettings.wsReconnectDelayMs,
 };
 
 function App() {
-  const [settings] = useState<AppSettings>({
-    groupsPerSecond: appSettings.groupsPerSecond,
-    objectsPerGroup: appSettings.objectsPerGroup,
-    fetchAheadSeconds: appSettings.fetchAheadSeconds,
-    backBufferSeconds: appSettings.backBufferSeconds,
-    maxBufferSeconds: appSettings.maxBufferSeconds,
-    fetchThrottleMs: appSettings.fetchThrottleMs,
-    autoPlayDelayMs: appSettings.autoPlayDelayMs,
-    defaultMaxAllowedDriftMs: appSettings.defaultMaxAllowedDriftMs,
-    syncMinAllowedDriftMs: appSettings.syncMinAllowedDriftMs,
-    syncMaxAllowedDriftMs: appSettings.syncMaxAllowedDriftMs,
-  })
+  const [settings] = useState<AppSettings>(window.appSettings)
 
   const [syncConfig, setSyncConfig] = useState<SyncConfig>({
     ...DEFAULT_SYNC_CONFIG,
-    deltaThresholdSeconds: appSettings.defaultMaxAllowedDriftMs / 1000,
+    deltaThresholdSeconds: window.appSettings.defaultMaxAllowedDriftMs / 1000,
   })
 
   const [requestState, setRequestState] = useState<RequestState>({

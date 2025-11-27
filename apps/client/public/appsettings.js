@@ -1,0 +1,17 @@
+window.appSettings = {
+  groupsPerSecond: 1,
+  objectsPerGroup: 48,
+  fetchAheadSeconds: 5,
+  backBufferSeconds: 5,
+  maxBufferSeconds: 20,
+  fetchThrottleMs: 50,
+  autoPlayDelayMs: 2000,
+  defaultMaxAllowedDriftMs: 500,
+  syncMinAllowedDriftMs: 200,
+  syncMaxAllowedDriftMs: 3100,
+  deltaThresholdSeconds: 0.5,
+  leaderBroadcastIntervalMs: 100,
+  wsUrl: "ws://localhost:15001",
+  wsReconnectDelayMs: 3000,
+  relayUrl: "https://localhost:4448",
+};

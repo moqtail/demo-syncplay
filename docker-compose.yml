@@ -36,5 +36,3 @@ services:
     ports:
       - "15173:4173"
     restart: always
-    volumes:
-      - ./apps/client/src/assets/appsettings.json:/usr/src/app/dist/appsettings.json:ro

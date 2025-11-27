@@ -28,13 +28,13 @@ export interface RequestState {
 
 // ============ SYNC PLAYBACK TYPES ============
 
-export type UserRole = 'leader' | 'follower';
+export type UserRole = "leader" | "follower";
 
 export interface SyncConfig {
-  deltaThresholdSeconds: number;      // Sync tolerance (e.g., 0.5s)
-  leaderBroadcastIntervalMs: number;  // How often leader sends updates (e.g., 50ms)
-  wsUrl: string;                      // WebSocket server URL
-  wsReconnectDelayMs: number;         // Reconnection delay
+  deltaThresholdSeconds: number; // Sync tolerance (e.g., 0.5s)
+  leaderBroadcastIntervalMs: number; // How often leader sends updates (e.g., 50ms)
+  wsUrl: string; // WebSocket server URL
+  wsReconnectDelayMs: number; // Reconnection delay
 }
 
 export interface PlaybackPosition {
@@ -46,7 +46,7 @@ export interface PlaybackPosition {
 
 // WebSocket Messages (matching server types)
 export interface JoinRoomMessage {
-  type: 'join-as-leader' | 'join-as-follower';
+  type: "join-as-leader" | "join-as-follower";
   roomId: string;
   userName: string;
   mediaTrackName: string;
@@ -73,25 +73,25 @@ export interface RoomInfo {
 }
 
 export interface GetRoomsMessage {
-  type: 'get-rooms';
+  type: "get-rooms";
 }
 
 export interface GetConfigMessage {
-  type: 'get-config';
+  type: "get-config";
 }
 
 export interface RoomsListMessage {
-  type: 'rooms-list';
+  type: "rooms-list";
   rooms: RoomInfo[];
 }
 
 export interface ConfigMessage {
-  type: 'config';
+  type: "config";
   config: ServerConfig;
 }
 
 export interface SyncUpdateMessage {
-  type: 'sync-update';
+  type: "sync-update";
   timestamp: number;
   groupId: number;
   objectId: number;
@@ -99,8 +99,8 @@ export interface SyncUpdateMessage {
 }
 
 export interface PlaybackControlMessage {
-  type: 'playback-control';
-  action: 'play' | 'pause' | 'seek';
+  type: "playback-control";
+  action: "play" | "pause" | "seek";
   timestamp: number;
   groupId: number;
   objectId: number;
@@ -108,7 +108,7 @@ export interface PlaybackControlMessage {
 }
 
 export interface RoomStateMessage {
-  type: 'room-state';
+  type: "room-state";
   roomId: string;
   userId: string;
   role: UserRole;
@@ -125,7 +125,7 @@ export interface RoomStateMessage {
 }
 
 export interface UserJoinedMessage {
-  type: 'user-joined';
+  type: "user-joined";
   userId: string;
   userName: string;
   role: UserRole;
@@ -133,7 +133,7 @@ export interface UserJoinedMessage {
 }
 
 export interface UserLeftMessage {
-  type: 'user-left';
+  type: "user-left";
   userId: string;
   userName: string;
   totalUsers: number;
@@ -141,7 +141,7 @@ export interface UserLeftMessage {
 }
 
 export interface ErrorMessage {
-  type: 'error';
+  type: "error";
   code: string;
   message: string;
 }
@@ -155,3 +155,21 @@ export type ServerMessage =
   | ErrorMessage
   | RoomsListMessage
   | ConfigMessage;
+
+export interface AppSettings {
+  groupsPerSecond: number;
+  objectsPerGroup: number;
+  fetchAheadSeconds: number;
+  backBufferSeconds: number;
+  maxBufferSeconds: number;
+  fetchThrottleMs: number;
+  autoPlayDelayMs: number;
+  defaultMaxAllowedDriftMs: number;
+  syncMinAllowedDriftMs: number;
+  syncMaxAllowedDriftMs: number;
+  deltaThresholdSeconds: number;
+  leaderBroadcastIntervalMs: number;
+  wsUrl: string;
+  wsReconnectDelayMs: number;
+  relayUrl: string;
+}

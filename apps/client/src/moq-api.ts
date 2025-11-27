@@ -15,7 +15,6 @@
  */
 
 import type { FragmentRange } from './types';
-import appSettings from '../src/assets/appsettings.json';
 
 import {
   MOQtailClient,
@@ -30,7 +29,7 @@ import {
   type ControlMessage,
 } from 'moqtail-ts';
 
-const MOQ_RELAY_URL = appSettings.relayUrl;
+const MOQ_RELAY_URL = window.appSettings.relayUrl;
 const SUPPORTED_VERSIONS = [0xFF00000E]; //constants -> draft 14
 
 let moqClient: MOQtailClient | null = null;

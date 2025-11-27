@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod moqpublisher;
 mod indexer;
 mod moq_publisher_client;
+mod moqpublisher;
 use std::sync::Arc;
 use warp::Filter;
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

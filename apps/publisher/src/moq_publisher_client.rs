@@ -12,30 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::Arc;
-use moqtail::model::data::constant::ObjectStatus;
-use moqtail::model::{
-    common::tuple::Tuple,
-    data::subgroup_object::SubgroupObject,
-    data::object::Object,
-};
+use crate::indexer;
 use bytes::Bytes;
-use std::io::{Read, Seek, SeekFrom};
-use moqtail::model::control::publish_namespace::PublishNamespace;
-use moqtail::model::control::subscribe_ok::SubscribeOk;
-use moqtail::model::control::control_message::ControlMessage;
+use dotenv::dotenv;
 use moqtail::model::control::client_setup::ClientSetup;
 use moqtail::model::control::constant;
+use moqtail::model::control::control_message::ControlMessage;
+use moqtail::model::control::publish_namespace::PublishNamespace;
+use moqtail::model::control::subscribe_ok::SubscribeOk;
+use moqtail::model::data::constant::ObjectStatus;
+use moqtail::model::data::subgroup_header::SubgroupHeader;
+use moqtail::model::{
+    common::tuple::Tuple, data::object::Object, data::subgroup_object::SubgroupObject,
+};
 use moqtail::transport::control_stream_handler::ControlStreamHandler;
 use moqtail::transport::data_stream_handler::{HeaderInfo, SendDataStream};
-use moqtail::model::data::subgroup_header::SubgroupHeader;
-use tracing::{info, error};
-use wtransport::{ClientConfig, Endpoint};
-use crate::indexer;
-use dotenv::dotenv;
 use std::env;
+use std::io::{Read, Seek, SeekFrom};
+use std::sync::Arc;
+use tracing::{error, info};
+use wtransport::{ClientConfig, Endpoint};
 
-pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index>) -> Result<(), anyhow::Error> {
+pub async fn run_moq_publisher(
+    mp4_path: Arc<String>,
+    idx: Arc<indexer::Mp4Index>,
+) -> Result<(), anyhow::Error> {
     dotenv().ok(); // Load the .env file
     let endpoint = env::var("RELAY_URL").expect("RELAY_URL must be set in .env");
     let validate_cert = true;
@@ -134,12 +135,18 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                     continue;
                 }
 
-                info!("SubscribeOk sent for request {} with alias {}", sub.request_id, track_alias);
+                info!(
+                    "SubscribeOk sent for request {} with alias {}",
+                    sub.request_id, track_alias
+                );
 
                 // Spawn the proactive publishing task now that alias is registered
                 // Avoid spawning multiple publisher tasks for the same alias
                 if published_aliases.contains(&track_alias) {
-                    info!("Already publishing for alias {}, skipping spawn", track_alias);
+                    info!(
+                        "Already publishing for alias {}, skipping spawn",
+                        track_alias
+                    );
                     continue;
                 }
                 published_aliases.insert(track_alias);
@@ -161,9 +168,10 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                     };
 
                     // group fragments by group id
-                    let mut groups: std::collections::BTreeMap<u64, Vec<_>> = std::collections::BTreeMap::new();
+                    let mut groups: std::collections::BTreeMap<u64, Vec<_>> =
+                        std::collections::BTreeMap::new();
                     for frag in &idx_clone.frags {
-                        groups.entry(frag.group).or_default().push(frag.clone());
+                        groups.entry(frag.group).or_default().push(frag);
                     }
 
                     // Send init segment (ftyp+moov) as group 0 object 0 so subscribers and caches
@@ -186,9 +194,13 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                                 }
                                 Ok(pending) => {
                                     match pending.await {
-                                        Err(e) => error!("Failed to complete open uni stream for init: {:?}", e),
+                                        Err(e) => error!(
+                                            "Failed to complete open uni stream for init: {:?}",
+                                            e
+                                        ),
                                         Ok(send_stream) => {
-                                            let send_stream = Arc::new(tokio::sync::Mutex::new(send_stream));
+                                            let send_stream =
+                                                Arc::new(tokio::sync::Mutex::new(send_stream));
 
                                             // For the init segment we will publish it as group 0 object 0
                                             // Use explicit subgroup id 0 so receivers know this is the init object
@@ -201,14 +213,22 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                                                 true,
                                             );
 
-                                            let header_info = HeaderInfo::Subgroup { header: sub_header };
-                                            match SendDataStream::new(send_stream.clone(), header_info).await {
+                                            let header_info =
+                                                HeaderInfo::Subgroup { header: sub_header };
+                                            match SendDataStream::new(
+                                                send_stream.clone(),
+                                                header_info,
+                                            )
+                                            .await
+                                            {
                                                 Ok(mut stream_handler) => {
                                                     let subgroup_obj = SubgroupObject {
                                                         object_id: 0,
                                                         extension_headers: Some(vec![]),
                                                         object_status: Some(ObjectStatus::Normal),
-                                                        payload: Some(Bytes::from(init_buf.clone())),
+                                                        payload: Some(Bytes::from(
+                                                            init_buf.clone(),
+                                                        )),
                                                     };
 
                                                     let object = match Object::try_from_subgroup(
@@ -220,27 +240,48 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                                                     ) {
                                                         Ok(o) => o,
                                                         Err(e) => {
-                                                            error!("Failed to build init Object from subgroup: {:?}", e);
+                                                            error!(
+                                                                "Failed to build init Object from subgroup: {:?}",
+                                                                e
+                                                            );
                                                             // Not inside loop here — skip sending init object.
                                                             // Return early from the spawned task to avoid further errors.
                                                             return;
                                                         }
                                                     };
 
-                                                    if let Err(e) = stream_handler.send_object(&object, None).await {
-                                                        error!("Failed to send init object: {:?}", e);
+                                                    if let Err(e) = stream_handler
+                                                        .send_object(&object, None)
+                                                        .await
+                                                    {
+                                                        error!(
+                                                            "Failed to send init object: {:?}",
+                                                            e
+                                                        );
                                                     }
 
                                                     if let Err(e) = stream_handler.flush().await {
-                                                        error!("Failed to flush init stream: {:?}", e);
+                                                        error!(
+                                                            "Failed to flush init stream: {:?}",
+                                                            e
+                                                        );
                                                     }
 
                                                     if let Err(e) = stream_handler.finish().await {
-                                                        error!("Failed to finish init stream: {:?}", e);
+                                                        error!(
+                                                            "Failed to finish init stream: {:?}",
+                                                            e
+                                                        );
                                                     }
-                                                    info!("Sent init segment as group 0 object 0 ({} bytes)", init_len);
+                                                    info!(
+                                                        "Sent init segment as group 0 object 0 ({} bytes)",
+                                                        init_len
+                                                    );
                                                 }
-                                                Err(e) => error!("Failed to create SendDataStream for init: {:?}", e),
+                                                Err(e) => error!(
+                                                    "Failed to create SendDataStream for init: {:?}",
+                                                    e
+                                                ),
                                             }
                                         }
                                     }
@@ -250,35 +291,54 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                     }
 
                     for (group_id, frags) in groups {
-                        info!("Publishing group {} with {} fragments (total across tracks)", group_id, frags.len());
+                        info!(
+                            "Publishing group {} with {} fragments (total across tracks)",
+                            group_id,
+                            frags.len()
+                        );
                         tokio::time::sleep(std::time::Duration::from_nanos(10)).await;
                         // Partition the fragments for this group by track id so we publish one
                         // unidirectional stream per track (video/audio), which ensures both
                         // tracks' objects are sent (previously only one stream per group was used).
-                        let mut per_track: std::collections::BTreeMap<u32, Vec<_>> = std::collections::BTreeMap::new();
+                        let mut per_track: std::collections::BTreeMap<u32, Vec<_>> =
+                            std::collections::BTreeMap::new();
                         for frag in frags.iter() {
-                            per_track.entry(frag.track_id).or_default().push(frag.clone());
+                            per_track
+                                .entry(frag.track_id)
+                                .or_default()
+                                .push(frag.clone());
                         }
 
-                        for (_, (track_id, track_frags)) in per_track.into_iter().enumerate() {
-                            info!("Publishing group {} track {} with {} fragments", group_id, track_id, track_frags.len());
+                        for (track_id, track_frags) in per_track.into_iter() {
+                            info!(
+                                "Publishing group {} track {} with {} fragments",
+                                group_id,
+                                track_id,
+                                track_frags.len()
+                            );
 
                             // open a unidirectional stream for this track
                             let stream_res = conn_clone.open_uni().await;
                             if let Err(e) = stream_res {
-                                error!("Failed to open uni stream for group {} track {}: {:?}", group_id, track_id, e);
+                                error!(
+                                    "Failed to open uni stream for group {} track {}: {:?}",
+                                    group_id, track_id, e
+                                );
                                 continue;
                             }
                             let pending = stream_res.unwrap();
                             let open_res = pending.await;
                             if let Err(e) = open_res {
-                                error!("Failed to complete open uni stream for group {} track {}: {:?}", group_id, track_id, e);
+                                error!(
+                                    "Failed to complete open uni stream for group {} track {}: {:?}",
+                                    group_id, track_id, e
+                                );
                                 continue;
                             }
                             let send_stream = open_res.unwrap();
                             let send_stream = Arc::new(tokio::sync::Mutex::new(send_stream));
 
-                            let subgroup_id : u64 = 1;
+                            let subgroup_id: u64 = 1;
 
                             let sub_header = SubgroupHeader::new_with_explicit_id(
                                 track_alias,
@@ -290,10 +350,18 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                             );
 
                             let header_info = HeaderInfo::Subgroup { header: sub_header };
-                            let mut stream_handler = match SendDataStream::new(send_stream.clone(), header_info).await {
+                            let mut stream_handler = match SendDataStream::new(
+                                send_stream.clone(),
+                                header_info,
+                            )
+                            .await
+                            {
                                 Ok(s) => s,
                                 Err(e) => {
-                                    error!("Failed to create SendDataStream for group {} track {}: {:?}", group_id, track_id, e);
+                                    error!(
+                                        "Failed to create SendDataStream for group {} track {}: {:?}",
+                                        group_id, track_id, e
+                                    );
                                     continue;
                                 }
                             };
@@ -336,20 +404,37 @@ pub async fn run_moq_publisher(mp4_path: Arc<String>, idx: Arc<indexer::Mp4Index
                                     }
                                 };
 
-                                if let Err(e) = stream_handler.send_object(&object, prev_object_id).await {
-                                    error!("Failed to send object for group {} track {} object {}: {:?}", group_id, track_id, object_id_for_frag, e);
+                                if let Err(e) =
+                                    stream_handler.send_object(&object, prev_object_id).await
+                                {
+                                    error!(
+                                        "Failed to send object for group {} track {} object {}: {:?}",
+                                        group_id, track_id, object_id_for_frag, e
+                                    );
                                     break;
                                 } else {
-                                    info!("Sent object for group {} track {} object {} (size={})", group_id, track_id, object_id_for_frag, object.payload.as_ref().map(|p| p.len()).unwrap_or(0));
+                                    info!(
+                                        "Sent object for group {} track {} object {} (size={})",
+                                        group_id,
+                                        track_id,
+                                        object_id_for_frag,
+                                        object.payload.as_ref().map(|p| p.len()).unwrap_or(0)
+                                    );
                                 }
                                 prev_object_id = Some(object_id_for_frag);
                             }
 
                             if let Err(e) = stream_handler.flush().await {
-                                error!("Failed to flush stream for group {} track {}: {:?}", group_id, track_id, e);
+                                error!(
+                                    "Failed to flush stream for group {} track {}: {:?}",
+                                    group_id, track_id, e
+                                );
                             }
                             if let Err(e) = stream_handler.finish().await {
-                                error!("Failed to finish stream for group {} track {}: {:?}", group_id, track_id, e);
+                                error!(
+                                    "Failed to finish stream for group {} track {}: {:?}",
+                                    group_id, track_id, e
+                                );
                             }
                         }
 

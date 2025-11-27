@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::indexer;
+use bytes::{Buf, BufMut, Bytes, BytesMut};
+use moqtail::model::control::control_message::ControlMessageTrait;
+use moqtail::model::control::fetch::Fetch;
+use moqtail::model::data::fetch_object::FetchObject;
 use serde::Deserialize;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::sync::Arc;
-use bytes::{Bytes, BytesMut, BufMut, Buf};
-use crate::indexer;
-use moqtail::model::data::fetch_object::FetchObject;
-use moqtail::model::control::fetch::Fetch;
-use moqtail::model::control::control_message::ControlMessageTrait;
-
 
 //TODO: should be moved to moqtail-rs structure
 #[derive(Deserialize)]
@@ -35,7 +34,6 @@ pub struct RangeQuery {
     #[serde(rename = "EndObjectId")]
     pub end_object_id: u32,
 }
-
 
 //TODO: Should be moved to moqtail answer
 pub async fn handle_range_request(
@@ -97,7 +95,7 @@ pub async fn handle_fetch_request(
 
     // Deserialize the Fetch request - the body should contain the full serialized message
     let mut bytes = body;
-    
+
     // Skip the control message type (1 byte)
     if bytes.is_empty() {
         return Ok(Box::new(warp::reply::with_status(
@@ -106,8 +104,8 @@ pub async fn handle_fetch_request(
         )));
     }
     bytes.advance(1); // Skip message type
-    
-    // Skip the payload length (2 bytes) 
+
+    // Skip the payload length (2 bytes)
     if bytes.len() < 2 {
         return Ok(Box::new(warp::reply::with_status(
             "Message too short".to_string(),
@@ -115,7 +113,7 @@ pub async fn handle_fetch_request(
         )));
     }
     bytes.advance(2); // Skip payload length
-    
+
     let fetch = match Fetch::parse_payload(&mut bytes) {
         Ok(fetch) => *fetch,
         Err(e) => {
@@ -231,7 +229,10 @@ pub async fn handle_fetch_request(
         }
     }
 
-    println!("Sending {} bytes of serialized FetchObjects", response_bytes.len());
+    println!(
+        "Sending {} bytes of serialized FetchObjects",
+        response_bytes.len()
+    );
 
     Ok(Box::new(warp::reply::with_header(
         response_bytes.into_iter().collect::<Vec<u8>>(),

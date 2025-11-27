@@ -42,7 +42,6 @@ pub struct Mp4Index {
     pub frags: Vec<Frag>,
 }
 
-
 pub fn build_index(path: &str) -> Result<Mp4Index, Box<dyn std::error::Error>> {
     let f = File::open(path)?;
     let mut r = BufReader::new(f);
@@ -57,7 +56,7 @@ pub fn build_index(path: &str) -> Result<Mp4Index, Box<dyn std::error::Error>> {
     let mut grp_counters: HashMap<u32, HashMap<u64, u32>> = HashMap::new();
 
     while let Ok(h) = BoxHeader::read(&mut r) {
-        let payload_pos = r.seek(SeekFrom::Current(0))?;
+        let payload_pos = r.stream_position()?;
         if h.size == 0 {
             break;
         }
@@ -70,16 +69,15 @@ pub fn build_index(path: &str) -> Result<Mp4Index, Box<dyn std::error::Error>> {
             }
             BoxType::MoovBox => {
                 moov_start = box_start;
-                moov_size = h.size as u64;
+                moov_size = h.size;
                 let moov = MoovBox::read_box(&mut r, h.size)?;
                 for trak in &moov.traks {
                     timescale.insert(trak.tkhd.track_id, trak.mdia.mdhd.timescale);
-                    if let Some(edts) = &trak.edts {
-                        if let Some(elst) = &edts.elst {
-                            if elst.entries.len() == 1 {
-                                delay.insert(trak.tkhd.track_id, elst.entries[0].media_time);
-                            }
-                        }
+                    if let Some(edts) = &trak.edts
+                        && let Some(elst) = &edts.elst
+                        && elst.entries.len() == 1
+                    {
+                        delay.insert(trak.tkhd.track_id, elst.entries[0].media_time);
                     }
                 }
             }
@@ -91,9 +89,9 @@ pub fn build_index(path: &str) -> Result<Mp4Index, Box<dyn std::error::Error>> {
                     r.seek(SeekFrom::Current((next.size as i64) - 8))?;
                     continue;
                 }
-                let mdat_payload_pos = r.seek(SeekFrom::Current(0))?;
+                let mdat_payload_pos = r.stream_position()?;
                 let mdat_start = mdat_payload_pos - 8;
-                let mdat_size = next.size as u64;
+                let mdat_size = next.size;
                 r.seek(SeekFrom::Current((next.size as i64) - 8))?;
 
                 if moof.trafs.is_empty() {

@@ -276,7 +276,7 @@ export const subscribeToDemo = async (): Promise<void> => {
       fullTrackName,
       priority: 1,
       groupOrder: GroupOrder.Original,
-      forward: true,
+      forward: false,
       filterType: FilterType.LatestObject,
     });
 

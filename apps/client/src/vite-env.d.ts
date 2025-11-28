@@ -23,3 +23,7 @@ declare global {
     appSettings: AppSettings
   }
 }
+
+interface ImportMeta {
+  readonly vitest?: unknown;
+}

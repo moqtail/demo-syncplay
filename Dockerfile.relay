@@ -7,8 +7,8 @@ RUN apk --no-cache add git musl-dev
 WORKDIR /moqtail
 RUN git init . && \
     git remote add origin https://github.com/streaming-university/moqtail.git && \
-    git fetch --depth 1 origin a32a2fc2b59d2175e458d3cfbbe2cbd04e6579aa && \
-    git checkout a32a2fc2b59d2175e458d3cfbbe2cbd04e6579aa
+    git fetch --depth 1 origin SyncPlay && \
+    git checkout SyncPlay
 
 # Build the relay
 RUN cargo install --path apps/relay

@@ -296,7 +296,7 @@ pub async fn run_moq_publisher(
                             group_id,
                             frags.len()
                         );
-                        tokio::time::sleep(std::time::Duration::from_nanos(10)).await;
+                        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
                         // Partition the fragments for this group by track id so we publish one
                         // unidirectional stream per track (video/audio), which ensures both
                         // tracks' objects are sent (previously only one stream per group was used).

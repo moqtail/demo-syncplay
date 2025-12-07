@@ -1,0 +1,19 @@
+[package]
+name = "publisher"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.97"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+wtransport = {version = "0.6.1", features = ["dangerous-configuration"] }
+tokio = { version = "1.0", features = ["full"] }
+serde_json = "1.0.140"
+bytes = "1.10.1"
+moqtail = { git = "https://github.com/moqtail/moqtail.git", branch = "SyncPlay"}
+mp4 = "0.14"
+serde = { version = "1.0", features = ["derive"] }
+reqwest = { version = "0.11", features = ["json"] }
+warp = "0.3"
+dotenv = "0.15"

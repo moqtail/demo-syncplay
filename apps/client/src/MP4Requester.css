@@ -1,0 +1,155 @@
+.mp4-requester-container {
+  font-family: 'Source Sans 3', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  min-height: 100vh;
+}
+.mp4-requester-logo img {
+  max-width: 420px;
+  width: 100%;
+  height: auto;
+}
+.mp4-requester-lobby-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mp4-requester-lobby {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5rem;
+
+  max-width: 1200px;
+  padding: 3rem 4rem;
+  margin: 0 auto;
+}
+
+.mp4-requester-content {
+  max-width: 360px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mp4-requester-main {
+  max-width: 1100px;
+  margin: 2.5rem auto;
+  padding: 0 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.mp4-requester-title {
+    font-size: 2.4rem;
+    text-align: center;
+    margin-bottom: 0.8rem;
+    color: #2c3e50;
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 700;
+}
+
+.mp4-requester-form-group {
+  margin-bottom: 20px;
+}
+
+.mp4-requester-label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
+}
+
+.mp4-requester-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.mp4-requester-range-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.mp4-requester-range-group {
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.mp4-requester-range-group h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.mp4-requester-button {
+  padding: 12px 24px;
+  background-color: #577B9F;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.mp4-requester-button:hover {
+  background-color: #0056b3;
+}
+
+.mp4-requester-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.mp4-requester-info-box {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.mp4-requester-info-box h4 {
+  margin-top: 0;
+  color: #0066cc;
+}
+
+.mp4-requester-video-container {
+  margin-top: 30px;
+  max-width: 60%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: auto;
+  justify-content: center;
+  align-self: center;
+}
+
+.mp4-requester-video {
+  width: 100%;
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+.mp4-requester-error {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 15px;
+}

@@ -1,0 +1,26 @@
+{
+  "name": "syncplay-ws-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for synchronized playback coordination",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/server.ts",
+    "start": "node dist/server.js",
+    "watch": "tsc --watch"
+  },
+  "keywords": ["websocket", "sync", "moq"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/ws": "^8.5.9",
+    "@types/uuid": "^9.0.7",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.2"
+  }
+}
